@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+	<!-- hiveメタデータのメモリー位置-->
+	<property>
+		<name>javax.jdo.option.ConnectionURL</name>
+		<value>jdbc:mysql://centos2:3306/hivemetadata?createDatabaseIfNotExist=true&amp;useSSL=false</value>
+		<description>JDBC connect string for a JDBCmetastore</description>
+	</property>
+	<!-- 指定するドライバー -->
+	<property>
+		<name>javax.jdo.option.ConnectionDriverName</name>
+		<value>com.mysql.jdbc.Driver</value>
+		<description>Driver class name for a JDBCmetastore</description>
+	</property>
+	<!-- データベースを連絡するユーザー名 -->
+	<property>
+		<name>javax.jdo.option.ConnectionUserName</name>
+		<value>hive</value>
+		<description>username to use against metastoredatabase</description>
+	</property>
+	<!-- データベースを連絡するパスワード -->
+	<property>
+		<name>javax.jdo.option.ConnectionPassword</name>
+		<value>12345678</value>
+		<description>password to use against metastoredatabase</description>
+	</property>
+</configuration>

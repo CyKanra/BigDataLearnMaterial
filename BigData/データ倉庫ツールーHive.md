@@ -417,3 +417,64 @@ set hive.exec.mode.local.auto=false;
 set > -hiveconf > hive-site.xml > hive-default.xml
 
 ここまで【変数を配置する方法】内容が終わった。
+
+### 第２項　Hive命令
+
+本項は入門的な命令を紹介し、主にどうHiveを操作する命令、具体的なデータ操作が及ばない。
+
+**１．Hive**
+
+```
+usage: hive
+ -d,--define <key=value>          Variable substitution to apply to Hive
+                                  commands. e.g. -d A=B or --define A=B
+    --database <databasename>     Specify the database to use
+ -e <quoted-query-string>         SQL from command line
+ -f <filename>                    SQL from files
+ -H,--help                        Print help information
+    --hiveconf <property=value>   Use value for given property
+    --hivevar <key=value>         Variable substitution to apply to Hive
+                                  commands. e.g. --hivevar A=B
+ -i <filename>                    Initialization SQL file
+ -S,--silent                      Silent mode in interactive shell
+ -v,--verbose                     Verbose mode (echo executed SQL to the
+                                  console)
+```
+
+以上の命令は全部Linuxコマンドに操作し、幾つか例を引って解説する。
+
+```
+# 進入前にデータベースを指定する
+hive --database test
+
+# 直接にsqlを行う
+hive -e "select * from users"
+
+# sqlファイルも行える
+hive -f hiveSql.sql
+
+# 行い終える結果は指定されるファイルに書き込む
+hive -f hiveSql.sql >> result.log
+
+```
+
+**２．Hiveコマンドに sell / dfs 命令を行う**
+
+```
+! ls;
+! clear;
+dfs -ls / ;
+```
+
+**３．Hive退出**
+
+```
+exit;
+quit;
+```
+
+もっとHive命令に関する資料：
+
+[LanguageManual Commands - Apache Hive - Apache Software Foundation](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+Commands)
+
+ここまで本節終わった、お役立てれば良かったんです。

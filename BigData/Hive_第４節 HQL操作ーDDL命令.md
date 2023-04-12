@@ -119,5 +119,43 @@ CREATE [TEMPORARY] [EXTERNAL] TABLE [IF NOT EXISTS]
 
 5. clustered by：パーティションされるデータを桶（bucket）に分割して、桶のフィールドを指定してください。
 
-6. sorted by：桶内のデータを並び替える
+6. **sorted by**：桶内のデータを並び替える
+
+7. **ROW FORMAT**：Hiveの第３項に書いて表され、データが一定的コーディングによって保存されて、データの毎部分の中間に特別な符号で区切ります。
+
+   ```
+   ROW FORMAT DELIMITED
+   　[FIELDS TERMINATED BY char]
+   　[COLLECTION ITEMS TERMINATED BY char]
+   　[MAP KEYS TERMINATED BY char]
+   　[LINES TERMINATED BY char] | SERDE serde_name
+   　[WITH SERDEPROPERTIES　(property_name=property_value,property_name=property_value, ...)]
+   ```
+
+   ```
+   CREATE TABLE page_view(viewTime INT, userid BIGINT,
+        page_url STRING, referrer_url STRING,
+        ip STRING COMMENT 'IP Address of the User')
+    COMMENT 'This is the page view table'
+    PARTITIONED BY(dt STRING, country STRING)
+    CLUSTERED BY(userid) SORTED BY(viewTime) INTO 32 BUCKETS
+    ROW FORMAT DELIMITED
+      FIELDS TERMINATED BY '\001'
+      COLLECTION ITEMS TERMINATED BY '\002'
+      MAP KEYS TERMINATED BY '\003'
+      LINES TERMINATED BY '\r\n'
+    STORED AS SEQUENCEFILE;
+   ```
+
+   
+
+8. stored as SEQUENCEFILE|TEXTFILE|RCFILE：メモリー格式が指定する。普通のテキスト格式でメモリされてTEXTFILEを使える。若しデータが圧縮にするつもり、SEQUENCEFILE（二進法）使える。
+
+9. LOCATION：HDFSの保存位置を指定する。
+
+10. TBLPROPERTIES：テーブル属性の定義。
+
+11. AS：後ろに詮索語句を付いて、詮索結果よってテーブルを作成する。
+
+12. LIKE：like テーブル名、既にあるテーブルをコーピして、でもテーブルのデータがコーピしてない。
 

@@ -107,7 +107,7 @@ CREATE [TEMPORARY] [EXTERNAL] TABLE [IF NOT EXISTS]
 
 3. comment：テーブルの備考。
 
-4. partition by：データを仕切り（partition）に分割してパーティションのフィールドを指定してください。一般的に日付や地域別に分割することがよくある。
+4. partition by：データを仕切り（partition）に分割して仕切りのフィールドを指定してください。一般的に日付や地域別に分割することがよくある。
 
    ```
    CREATE TABLE my_table (
@@ -149,7 +149,7 @@ CREATE [TEMPORARY] [EXTERNAL] TABLE [IF NOT EXISTS]
 
    
 
-8. stored as SEQUENCEFILE|TEXTFILE|RCFILE：メモリー格式が指定する。普通のテキスト格式でメモリされてTEXTFILEを使える。若しデータが圧縮にするつもり、SEQUENCEFILE（二進法）使える。
+8. stored as SEQUENCEFILE|TEXTFILE|RCFILE：メモリー格式が指定する。普通のテキスト格式でメモリされてTEXTFILEを使える。若しデータを圧縮にするつもり、SEQUENCEFILE（二進法）使える。
 
 9. LOCATION：HDFSの保存位置を指定する。
 
@@ -159,3 +159,189 @@ CREATE [TEMPORARY] [EXTERNAL] TABLE [IF NOT EXISTS]
 
 12. LIKE：like テーブル名、既にあるテーブルをコーピして、でもテーブルのデータがコーピしてない。
 
+### 第３項　内部テーブルと外部テーブル
+
+　　テーブルを作成する際には、テーブル類型が指定されることができる。その類型は内部テーブル（Managed /Internal Tables）と外部テーブル（External Tables）の2つがあります。
+
+- 特に指定がない場合は内部テーブルが作成される。一方、キーワードexternal使って外部テーブルを作成できる。
+- 内部テーブルを削除すると、関連するメタデータとテーブルのデータ同時に削除される。
+- 外部テーブルを削除して関連なメタデータ削除されるだけ、データ自体が保留される。
+- 現行環境では外部テーブルがよく使われる。
+
+**内部テーブル**
+
+Data
+
+```
+#data1.datデータ
+1;suzuki;book,TV;tokyo:sinbuyakun
+2;yamada;Music,game,novel;kanagawaken:kawasaki,tokyo:itabasikun
+3;kimura;skiing,animation;chibaken:sakurasi
+```
+
+SQL
+
+```
+# 内部テーブル作成
+create table data1(
+ id int,
+ name string,
+ hobby array<string>,
+ addr map<string, string>
+)
+row format delimited
+ fields terminated by ";"
+ collection items terminated by ","
+ map keys terminated by ":";
+ 
+# 情報の顕示
+desc data1;
+
+# より詳しい情報を顕示し、格式が規範になる
+desc formatted data1;
+```
+
+![image-20230413193032161](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230413193032161.png)
+
+```
+-- データをアップロード
+load data local inpath '/usr/hadoop/data/data1.dat' into table data1;
+
+-- データを詮索
+select * from data1;
+
+-- データファイルを顕示
+dfs -ls /user/hive/warehouse/mydb.db/data1;
+```
+
+![image-20230413195612202](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230413195612202.png)
+
+![image-20230413195912465](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230413195912465.png)
+
+```
+-- テーブルを削除し、データも削除される。
+drop table data1;
+```
+
+![image-20230413200056362](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230413200056362.png)
+
+**外部テーブル**
+
+SQL
+
+```
+# 外部テーブル作成
+create external table data1(
+ id int,
+ name string,
+ hobby array<string>,
+ addr map<string, string>
+)
+row format delimited
+ fields terminated by ";"
+ collection items terminated by ","
+ map keys terminated by ":";
+ 
+# 情報の顕示
+desc data1;
+
+-- データをアップロード
+load data local inpath '/usr/hadoop/data/data1.dat' into table data1;
+
+-- データを詮索
+select * from data1;
+```
+
+![image-20230415163156332](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230415163156332.png)
+
+```
+-- テーブルを削除し、データも削除される。
+drop table data1;
+
+-- データファイルを顕示
+dfs -ls /user/hive/warehouse/mydb.db/data1;
+```
+
+![image-20230415163252735](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230415163252735.png)
+
+保留されたデータを再利用する場合は、同じ名称テーブルを作成してデータを再度利用することができます。
+
+![image-20230415171912262](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230415171912262.png)
+
+**内部テーブルと外部テーブル変換**
+
+```
+create table data1(
+ id int,
+ name string,
+ hobby array<string>,
+ addr map<string, string>
+)
+row format delimited
+ fields terminated by ";"
+ collection items terminated by ","
+ map keys terminated by ":";
+
+load data local inpath '/usr/hadoop/data/data1.dat' into table data1;
+
+# 外部テーブルに変換する
+alter table data1 set tblproperties('EXTERNAL'='TRUE');
+
+# 内部テーブルに変換する
+alter table data1 set tblproperties('EXTERNAL'='TRUE');
+
+desc formatted data1;
+```
+
+![image-20230415185250107](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230415185250107.png)
+
+![image-20230415185443811](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230415185443811.png)
+
+### 第４項　パーティションテーブル
+
+　　Hiveは詮索語句を実行する際に、全てのデータが走査するため、データ量が大きい場合は時間がかかり、効率も低くなる。
+
+　　ある時、特定の条件に一致する部分のデータを走査するだけで、仕切り観念を引っ込み、不同的な目録に相同的な条件のデータを保存させて、毎目録が一つの仕切りに対応する。仕切りの内部に詮索するのは、全てのデータの走査が必要ない、処理の効率が高まる。
+
+　　通常の情況に時間、アドレスを仕切りとして使用する。
+
+```
+create external table data2(
+ id int,
+ name string,
+ hobby array<string>,
+ addr map<string, string>
+)
+partitioned by (dt string)
+row format delimited
+ fields terminated by ";"
+ collection items terminated by ","
+ map keys terminated by ":";
+ 
+# データ添加
+load data local inpath '/usr/hadoop/data/data1.dat' into table data2 partition(dt="2023-04-17");
+
+load data local inpath '/usr/hadoop/data/data1.dat' into table data2 partition(dt="2023-04-18");
+```
+
+![image-20230417205518706](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230417205518706.png)
+
+仕切りのフィールドがテーブル自体のフィールドじゃないが、列にとして処理できる。
+
+![image-20230417211209822](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230417211209822.png)
+
+若しテーブル自体のフィールドを仕切りのフィールドとして指定すると、エラーを発生することがある。
+
+![image-20230417214501596](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230417214501596.png)
+
+**仕切り検査**
+
+```
+show partitions data2;
+```
+
+![image-20230417215112458](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230417215112458.png)
+
+![image-20230417215125655](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230417215125655.png)
+
+HDFSにデータの保存形式からして、データの仕切りは不同的なファイルに分割して保存し、仕切りの相互に重複のデータが存在することは許す。

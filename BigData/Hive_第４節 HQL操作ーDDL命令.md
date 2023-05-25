@@ -704,28 +704,37 @@ insert into table data2Bucket1 select * from data2;
 
 　　仕切りテーブルには複数の目録と目録下のデータファイルが組み合うものと理解する。仕切りフィールドがテーブル自体のフィールドではない、新たに追加されたフィールド値が仕切りに対して目録名となり、入力の際に厳密な検証が行われないため、入力したデータの形式に応じて出力されるデータの形式が全く決まる。仕切りテーブル操作が簡単ですが、誤りデータをより易く生成される。正しいデータの入力と検証に対して十分な注意を払う必要がある。
 
-### 第８項　テーブルの改修と消除
+### 第８項　テーブルの変更と消除
 
 ```
-# 修改表名。rename
-alter table course_common rename to course_common1;
+# テーブル名変更　rename
+alter table data1 rename to data;
 
-# 修改列名。change column 
-alter table course_common1 change column id cid int;
+# フィールド名変更　change column 
+alter table data change column id cid int;
 
-# 修改字段类型。change column
-alter table course_common1 change column cid cid string;
-
-# 修改字段数据类型时，要满足数据类型转换的要求。如int可以转为string，但是 string不能转为int
-# 增加字段。add columns
-alter table course_common1
-add columns (common string);
-# 删除字段：replace columns
-# 这里仅仅只是在元数据中删除了字段，并没有改动hdfs上的数据文件
-alter table course_common1
-replace columns(
-id string, cname string, score int);
-# 删除表
-drop table course_common1;
+# フィールド類型変更　change column
+alter table data change column cid cid string;
 ```
+
+　　フィールド類型を変更する際に、類型変換の規則に合うことは必要です。
+
+![image-20230525151305793](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230525151305793.png)
+
+```
+# フィールド増加　add columns
+alter table data add columns (phone string);
+
+# フィールド消除　replace columns
+alter table data replace columns (phone string);
+
+# テーブル消除
+drop table data;
+```
+
+　　ここで注意すべき点がある。外部テーブルに変更操作が元データを影響するのみ、HDFS上にデータファイルが影響しない。内部テーブルに元データとデータファイルが全部変更される、とテーブルの消除が同じ。例えば、外部テーブル名を変更したら、HDFSに目録名が変わない。でも、内部テーブルに対しての目録名が変わる。下図に元の目録名がdata1、今datamanager1に変更された。
+
+![image-20230525173541477](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230525173541477.png)
+
+　　外部テーブル対してデータファイルがずっと保留できる点が利点だと思うけど、データファイル名がテーブル名の変わりに伴って変われない、最後に両者の関係が名のみから知らなくなるかもしれない。従って、Hiveに増加と消除でいい、変更（update）操作がお勧めしゃない。
 

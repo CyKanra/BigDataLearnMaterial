@@ -1,0 +1,23 @@
+<property>
+	<!-- データの黙認保存位置(HDFS) -->
+	<name>hive.metastore.warehouse.dir</name>
+	<value>/user/hive/warehouse</value>
+	<description>location of default database for thewarehouse</description>
+</property>
+<property>
+	<!-- コマンド画面操作の下，当面のデータベースを表す -->
+	<name>hive.cli.print.current.db</name>
+	<value>true</value>
+	<description>Whether to include the current database in theHive prompt.</description>
+</property>
+<property>
+	<!-- コマンド画面操作の下，データ列名を表す -->
+	<name>hive.cli.print.header</name>
+	<value>true</value>
+</property>
+<property>
+	<!-- 小規模データの下に本地サービス行う、効率上げる -->
+	<name>hive.exec.mode.local.auto</name>
+	<value>true</value>
+	<description>Let Hive determine whether to run in localmode automatically</description>
+</property>

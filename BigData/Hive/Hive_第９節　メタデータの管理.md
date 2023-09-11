@@ -109,7 +109,7 @@ centos4のhive-site.xmlを改修：MySQLに関する配置情報を消除して�
 
 　　HiveServer2導入は以下の不足点を完備するためHiveServerサービスを書き直す
 
-- 一回一つのクライアントが連接させるのが許可する。
+- 1回1つのクライアントが連接させるのが許可する。
 - 身分検証が支持しない。
 - 訪問流れの会話管理が支持しない。
 
@@ -141,6 +141,14 @@ centos4のhive-site.xmlを改修：MySQLに関する配置情報を消除して�
 
 　　HiveServer2は、匿名（検証なし）、SASLあり及びSASLなし、Kerberos（GSSAPI）、LDAPを通じて挿入可能な特製認証（Pluggable Custom Authentication）、及び挿入可能な認証モジュール（Pluggable Authentication Modules）を支持している。
 
+**HiveServer2クライアント**
+
+　　不同なHiveServer2クライアントの方式をちょっと説明する。
+
+- Beeline：Hiveの新しく引用されたのコマンドライン形式でSQLLine CLIを基づいてのJDBCクライアント、SQLLine CLIを基づいて以後Hiveクライアントが完全にBeelineを代わってる。
+- JDBC：その名詞は中々了解してあり、HiveServer2 はJDBCドライバあり、MySQLのJDBCみたいHiveServer2サービスを連接していい。
+- Python ClientとRuby Client：PythonとRuby言語でHiveServer2サービスの連接方法。
+
 **HiveServer2配置**
 
 | 節点    | HiveServer2 | client |
@@ -150,3 +158,117 @@ centos4のhive-site.xmlを改修：MySQLに関する配置情報を消除して�
 | centos3 |             |        |
 | centos4 |             | √      |
 
+　　「$HADOOP_HOME/etc/hadoop/」目録下のcore-site.xmlに以下の内容を追加。この二つの配置の目的はrootユーザーに全ての訪問権限を分配してあげる。配置なければ、外部訪問する時三つ目図のようなエラー情報が返却される。
+
+```
+<!-- rootユーザーが全てのユーザーに代わってる -->
+<property>
+	<name>hadoop.proxyuser.root.hosts</name>
+	<value>*</value>
+</property>
+<property>
+	<name>hadoop.proxyuser.root.groups</name>
+	<value>*</value>
+</property>
+```
+
+![image-20230906202514054](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230906202514054.png)
+
+![image-20230908161043485](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230908161043485.png)
+
+　　hdfs-site.xmlに以下の内容を追加（不要可）、せめて私の環境変数が需要じゃない。
+
+```
+<!--webhdfsサービスを起動 -->
+<property>
+	<name>dfs.webhdfs.enabled</name>
+	<value>true</value>
+</property>
+```
+
+![image-20230906203626226](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230906203626226.png)
+
+```
+#他のサーバに分配する
+scp -r core-site.xml centos2:$PWD
+scp -r hdfs-site.xml centos2:$PWD
+```
+
+![image-20230906203910560](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230906203910560.png)
+
+```
+#再Hadoopサービスを起動、jps命令使って起動が成功かどうかを検査してる
+start-dfs.sh
+start-yarn.sh
+mr-jobhistory-daemon.sh start historyserver
+
+#centos2サーバがhiveserver2を起動
+nohup hiveserver2 &
+
+#hiveserver2のポイント号を検査
+lsof -i:10000
+```
+
+![image-20230907154101159](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230907154101159.png)
+
+　　ブラウザにhiveserver2の存在サーバIPアドレスと10002ポイント号（centos2:10002/）を入力し、順調なら下図が現れる。
+
+![image-20230907154351161](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230907154351161.png)
+
+　　centos4サーバでhiveserver2のBeelineクライアントを起動
+
+```
+#$HIVE_HOME/bin目録beeline起動ファイル
+./beeline
+!connect jdbc:hive2://centos2:10000 scott tiger
+show databases;
+use mydb;
+select * from temp;
+!help
+!quit
+```
+
+![image-20230907161310108](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230907161310108.png)![image-20230907162729004](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230907162729004.png)
+
+![image-20230907162820317](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230907162820317.png)
+
+　　Beelineが成功にhiveserver2を連接した時、Hiveserver2の会話管理Active Sessionsが1のsessionsになる。具体的な実行流れのSQL語句も表せる。
+
+　　上図から見えて、 「select * from mydb.transtable」命令が失敗した。トランザクションのテーブルに対して新たな会話に入る前に幾つか変数が設定する必要です。
+
+![image-20230907163744146](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230907163744146.png)
+
+```
+SET hive.support.concurrency = true;
+SET hive.enforce.bucketing = true;
+SET hive.exec.dynamic.partition.mode = nonstrict;
+SET hive.txn.manager = org.apache.hadoop.hive.ql.lockmgr.DbTxnManager;
+
+#若し「NullPointerException」みたいのエラー情報が表し、以下の変数を入力してみる
+SET hiveconf:tez.am.container.reuse.enabled=false;
+```
+
+![image-20230908195107170](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230908195107170.png)
+
+### 第３項　HCatalog
+
+　　HCatalogは、Hadoop向けのテーブルとメタデータのメモリー管理層（又は抽象層）、さまざまなデータ処理ツール（Pig、MapReduce、Sparkなど）を使用してあるため、ユーザーがHadoopクラスタでのデータファイルを読み書きする際の手続きを簡略化することを目的としている。HCatalogはユーザーに抽象テーブルを提供させて使って、具体的なデータの格納形式と訪問方法が注目する必要ない。
+
+![image-20230911155821362](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230911155821362.png)
+
+　　簡単の説明は、Hiveの命令画面やHivesever2ような方式ではない、Haddoop分散ファイルシステムを訪問して、直接にファイル中のデータが操作を行うことです。
+
+```
+#新たな配置が必要ない
+cd $HIVE_HOME/hcatalog/bin
+
+#案例
+./hcat -e "use mydb; show tables"
+./hcat -e "desc mydb.emp"
+./hcat -e "create table default.test1(id string, name string, age int)"
+
+```
+
+![image-20230911161638547](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230911161638547.png)
+
+### 第４項　データのメモリー格式

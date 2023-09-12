@@ -252,7 +252,7 @@ SET hiveconf:tez.am.container.reuse.enabled=false;
 
 ### 第３項　HCatalog
 
-　　HCatalogは、Hadoop向けのテーブルとメタデータのメモリー管理層（又は抽象層）、さまざまなデータ処理ツール（Pig、MapReduce、Sparkなど）を使用してあるため、ユーザーがHadoopクラスタでのデータファイルを読み書きする際の手続きを簡略化することを目的としている。HCatalogはユーザーに抽象テーブルを提供させて使って、具体的なデータの格納形式と訪問方法が注目する必要ない。
+　　HCatalogは、Hadoop向けのテーブルとメタデータの格納の管理層（又は抽象層）、さまざまなデータ処理ツール（Pig、MapReduce、Sparkなど）を使用してあるため、ユーザーがHadoopクラスタでのデータファイルを読み書きする際の手続きを簡略化することを目的としている。HCatalogはユーザーに抽象テーブルを提供させて使って、具体的なデータの格納形式と訪問方法が注目する必要ない。
 
 ![image-20230911155821362](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230911155821362.png)
 
@@ -266,9 +266,48 @@ cd $HIVE_HOME/hcatalog/bin
 ./hcat -e "use mydb; show tables"
 ./hcat -e "desc mydb.emp"
 ./hcat -e "create table default.test1(id string, name string, age int)"
-
 ```
 
 ![image-20230911161638547](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230911161638547.png)
 
-### 第４項　データのメモリー格式
+### 第４項　データの格納形式
+
+　　Hive支持できる格納形式：TEXTFILE（黙認形式）、SEQUENCEFILE、RCFILE、ORCFILE、PARQUET。
+
+　　TEXTFILEは黙認形式、テーブルを作成して形式が指定しなったら、TEXTFILEに使って、直接本地サーバからテーブルにテータを導入できる。でも、他の形式が定義されたのテーブルが必ずTEXTFILE形式のテーブルに導入しておき、後でそのテーブルからinsert命令でsequencefile、rcfile、orcfileテーブルに挿入する。
+
+**Row-basedとcolumn-based**
+
+　　行指向型（Row-based）の格納方法は1つ1つの行を一塊のデータとして扱う。データの追加も行単位で実行するし、検索結果も複数の行として返ってきるし、削除や更新の際には特定の行に対して更新や削除と操作が行われる。一般的なデータベースは行指向であり、例えばMySQL、Oracle、DB2、SQL Serverなどです。
+
+　　列指向型（column-based）の格納方法は列方向にデータを纏めて扱う。そのため、特定の列の値を纏めて処理することに非常に長けている。例えば、あるテーブルから商品名と価格だけを抜き出す処理などは効率的です。逆に、全ての行データを抜き出して返し、又は更新したり削除したりするのは苦手です。
+
+![image-20230912162809196](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230912162809196.png)
+
+　　TEXTFILE、SEQUENCEFILEは行指向型の格納形式、ORCやPARQUETは列指向型に基づいて格納する。
+
+**TEXTFILE**
+
+　　これがデフォルトの保存形式です。テーブルを作成する際にファイルの形式が指定されていない場合、HiveはTEXTFILE形式を使用します。データを導入する際、データファイルはHDFSに直接コピーされ、余りの処理は行わない。
+
+```
+Create table textfile_table(
+column_specs)
+stored as textfile;
+```
+
+**SEQUENCEFILE**
+
+　　SEQUENCEFILE形式のテーブルは直接ローカルファイルからデータをインポートできません。データはまずTEXTFILE形式のテーブルにインポートし、次にINSERTステートメントを使用してデータをSEQUENCEFILE形式のテーブルに移動する必要があります。
+
+**RCFILE**
+
+　　SEQUENCEFILEと同様に、RCFILE形式のテーブルも直接ローカルファイルからデータをインポートできません。データはまずTEXTFILE形式のテーブルにインポートし、次にINSERTステートメントを使用してデータをRCFILE形式のテーブルに移動する必要があります。
+
+**ORCFILE**
+
+　　前述のフォーマットと同様に、ORCFILE形式のテーブルも直接ローカルファイルからデータをインポートできません。データはまずTEXTFILE形式のテーブルにインポートし、次にINSERTステートメントを使用してデータをORCFILE形式のテーブルに移動する必要があります。
+
+**PARQUET**
+
+　　PARQUETは列指向の保存形式で、前述の形式と異なり、PARQUET形式のテーブルには直接ローカルファイルからデータをインポートできます。したがって、ローカルファイルデータをPARQUET形式のテーブルに直接インポートできます。

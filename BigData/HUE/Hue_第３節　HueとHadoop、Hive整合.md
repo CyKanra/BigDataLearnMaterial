@@ -29,10 +29,39 @@ history_server_api_url=http://centos2:19888
 
 **Hiveと集成**
 
+　　Hiveと集成させる前にHiveserver2サービスが起動状態と必要です。
+
 ```
 # [beeswax]
 hive_server_host=centos2
 hive_server_port=10000
 hive_conf_dir=/opt/lagou/servers/hive-2.3.7/conf
+```
+
+![image-20230917155656160](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230917155656160.png)
+
+**MySQLと集成**
+
+```
+# [librdbms] -- [[databases]] -- [[[mysql]]]；1639行
+# 注意：1639行原文： ##[[mysql]] => [[mysql]]；两个##要去掉!
+[[[mysql]]]
+nice_name="My SQL DB"
+name=hue
+engine=mysql
+host=linux123
+port=3306
+user=hive
+password=12345678
+```
+
+![image-20230917155547026](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230917155547026.png)
+
+**Hue再起動**
+
+```
+#実行
+cd /opt/bigdata/servers/hue/build/env/bin
+./supervisor
 ```
 

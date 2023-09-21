@@ -8,7 +8,7 @@
 
 　　Flumeは、Cloudera社によって開発された、分散型、高信頼性、高可用性、大規模なログデータの収集、集約の転送システムです。 Flumeにはデータの収集を行うため、様々な種類のデータ送信者が対応できる機能を提供されてある。 而も、データを簡単に処理でき、様々なデータ受信者に書き込む能力を提供する。 簡単に言えば、Flumeは実時間でログデータを収集するのデータ採集エンジンです。他の種類データ採集工具がdataX、kettle、Logstash、Scribe、sqoop。
 
-Flume特性：
+**Flume特性**：
 
 - 分散式：Flumeは分散クラスターとして展開でき、拡張性が高いです。
 - 高信頼性：節点の障害が発生した場合でも、ログデータは他のノードに転送され、データの損失がない。
@@ -19,7 +19,7 @@ Flume特性：
 
 ![image-20230919160148593](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230919160148593.png)
 
-Flume結構部品
+**Flume結構部品**：
 
 - Agent（エージェント／代理）: Flume代理は、データの収集、転送、及び処理を行うプロセスです。AgentはJVMプロセスであり、外部のログ生成者から事件データを収集し、目的地又は別のAgentに転送する。Agentには通常、Source、Channel、及びSinkの3つの主要なコンポーネントが含まれている。
 
@@ -59,3 +59,20 @@ Flume結構部品
 　　一つEventデータを複数のSinkに分けて不同なサーバのAgentに送信する。最後に各Agentのデータを一つの対象に重合される。
 
 ![image-20230920165040160](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230920165040160.png)
+
+### 第４項　Flume内部原理
+
+![image-20230921153806278](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230921153806278.png)
+
+**流れ説明**：
+
+**Source（ソース）**：Sourceは事件を受信し、それらをChannel に渡す役割を果たす。
+
+**Interceptor（インターセプター）**：InterceptorはSourceから受け取った事件を濾過するものです。
+
+**Channel Selector（チャネルセレクター／選別器）**：Channel Selectorは、Interceptorで処理された事件をどのチャネルに書き込むかを決める。2つの一般的な類型の選別機がある。
+
+- **Replicating Channel Selector（複製型選別器）**：この選別器は、Sourceからの事件をすべてのチャネルに複製する。これは、データの冗長性と可用性を確保するために複数のチャネルを使用する場合に役立つ。
+- **Multiplexing Channel Selector（多重化型選別器）**：この選別器は、事件の特定のheader値に基づいて、不同なチャネルに事件を分散させる。headerによってチャネルへの振り分けが行われる。
+
+**Sink（シンク）**：Sinkはチャネルから事件を受け取り、それらを最終的な目的地に書き込む役割を果たす。

@@ -15,13 +15,13 @@ Flume特性：
 - 利便性: Flumeの取り付けが易いですが、使用する時の配置はちょっと複雑で、一定な専門知識が必要です。
 - 実時間収集: Flumeはデータの実時間収集を支持している。
 
-### 第２項　Flumeの体系結構
+### 第２項　Flumeの結構
 
 ![image-20230919160148593](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230919160148593.png)
 
 Flume結構部品
 
-- Agent（代理）: Flume代理は、データの収集、転送、及び処理を行うプロセスです。AgentはJVMプロセスであり、外部のログ生成者から事件データを収集し、目的地又は別のAgentに転送する。Agentには通常、Source、Channel、及びSinkの3つの主要なコンポーネントが含まれている。
+- Agent（エージェント／代理）: Flume代理は、データの収集、転送、及び処理を行うプロセスです。AgentはJVMプロセスであり、外部のログ生成者から事件データを収集し、目的地又は別のAgentに転送する。Agentには通常、Source、Channel、及びSinkの3つの主要なコンポーネントが含まれている。
 
 - Source（ソース）: Sourceはデータの入力部品を表す。さまざまな種類のログデータ（例: avro、exec、spooldir、netcatなど）を受け取る。
 
@@ -32,3 +32,30 @@ Flume結構部品
 - Sink（シンク／水槽）: Sinkはデータの出力先を表す。SinkはChannelからデータを取得し、バッチ処理して指定された目的地、又は別のFlumeに送信する。Sinkは完全にトランザクショナルであり、データが正常に書き込まれたことを確認した後、Channelからデータを削除し、その流れを絶えず繰り返す。
 
 - Event（イベント／事件）: EventはFlumeがデータストリームを扱う最小単位です。Eventにはデータ本体とそのメタデータが含まれており、これらがSourceからSinkまで転送される。
+
+
+### 第３項　Flumeのトポロジー結構
+
+**直列接続**
+
+　　複数のFlumeを順次接続し、データを初めのSourceから最終的なSinkまで連続して転送する方法です。接続の所が必ずAvro方式を使用して転送する。
+
+![image-20230920151503666](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230920151503666.png)
+
+**コピー模式**
+
+　　Eventデータを複数の目的地に向けて流させる。Sourceからのデータが複数のChannelにコピーされて同じデータが転送する。Sinkが不同な目的地にデータを送信することができる。
+
+![image-20230920153111863](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230920153111863.png)
+
+**重合模式**
+
+　　この模式は実用性高い、通常な場合に数百台のサーバーが分散配置されている。各サーバーには生成されるログを収集して中央Agentに集めさせる、大規模な場合にはこの組み合わせ方式が非常に役立つ。
+
+![image-20230920165416309](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230920165416309.png)
+
+**負荷分散**
+
+　　一つEventデータを複数のSinkに分けて不同なサーバのAgentに送信する。最後に各Agentのデータを一つの対象に重合される。
+
+![image-20230920165040160](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230920165040160.png)

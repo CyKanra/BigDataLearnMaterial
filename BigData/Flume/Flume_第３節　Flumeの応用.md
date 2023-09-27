@@ -65,3 +65,72 @@ a1.sources.src-1.fileHeader = true
 ```
 
 **Taildir Source**：指定された複数のファイルを監聴し、これらのファイルにデータが書き込まれるとSourceがその新しいデータを読み込んで。Taildir Sourceには、データの信頼性が高い、毎回変更する内容がSinkに転送される。Flumeが故障になるといえども、Sourceが最後の読み込んだ位置から再読み込まれる。データの損失ことが発生してない。
+
+```
+a1.sources = r1
+a1.channels = c1
+a1.sources.r1.type = TAILDIR
+a1.sources.r1.channels = c1
+a1.sources.r1.positionFile = /var/log/flume/taildir_position.json
+a1.sources.r1.filegroups = f1 f2
+a1.sources.r1.filegroups.f1 = /var/log/test1/example.log
+a1.sources.r1.headers.f1.headerKey1 = value1
+a1.sources.r1.filegroups.f2 = /var/log/test2/.*log.*
+a1.sources.r1.headers.f2.headerKey1 = value2
+a1.sources.r1.headers.f2.headerKey2 = value2-2
+a1.sources.r1.fileHeader = true
+a1.sources.ri.maxBatchCount = 1000
+```
+
+**NetCat TCP/UDP Source**：特定のポートで監聴し、テキストの各行を受信する。nc -k -l [host] [port] のように動作します。指定されたデータは改行で区切られた、Flume事件と接続されたチャネル経由で送信される。
+
+```
+a1.sources = r1
+a1.channels = c1
+a1.sources.r1.type = netcat/netcatudp
+a1.sources.r1.bind = 0.0.0.0
+a1.sources.r1.port = 6666
+a1.sources.r1.channels = c1
+```
+
+#### Flume Channel
+
+**Memory Channel**：事件は配置される可能な最大サイズのメモリに格納される。高いスループット（throughput）に対して非常に適する。でも、障害が発生した場合は格納された一部分のデータを失う可能性があり、ここで注意してください。
+
+```
+a1.channels = c1
+a1.channels.c1.type = memory
+a1.channels.c1.capacity = 10000
+a1.channels.c1.transactionCapacity = 10000
+a1.channels.c1.byteCapacityBufferPercentage = 20
+a1.channels.c1.byteCapacity = 800000
+```
+
+**File Channel**：Memory Channelに対応してFile Channelはディスクに書き込んで、つまり、障害が発生するになってもデータを失わない。代わりに書き込みの速度がより遅い。
+
+```
+a1.channels = c1
+a1.channels.c1.type = fi　le
+a1.channels.c1.checkpointDir = /mnt/flume/checkpoint
+a1.channels.c1.dataDirs = /mnt/flume/data
+```
+
+**JDBC channel**：関係データベースをchannelとしてSourceからデータを受信して、JDBC channelが持続的に格納でき、データを失うことがない。唯一支持できるデータベースDerbyだけ。
+
+```
+a1.channels = c1
+a1.channels.c1.type = jdbc
+```
+
+**Kafka Channel**：JDBC channelに似て、channel中のデータがKafkaに格納される。
+
+```
+a1.channels.channel1.type = org.apache.flume.channel.kafka.KafkaChannel
+a1.channels.channel1.kafka.bootstrap.servers = kafka-1:9092,kafka-2:9092,kafka-3:9092
+a1.channels.channel1.kafka.topic = channel1
+a1.channels.channel1.kafka.consumer.group.id = flume-consumer
+```
+
+#### Flume Sink
+
+**HDFS sink**：

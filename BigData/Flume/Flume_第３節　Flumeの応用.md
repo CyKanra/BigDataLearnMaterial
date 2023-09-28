@@ -133,4 +133,45 @@ a1.channels.channel1.kafka.consumer.group.id = flume-consumer
 
 #### Flume Sink
 
-**HDFS sink**：
+**HDFS sink**：このSinkは、事件をHDFSに書き込みます。現在、テキストファイル（text file）とシーケンスファイル（sequence file）の作成を支持している。また、2つの圧縮形式も支持している。ファイルを定期的に更新（roll）してあり、現在のファイルを閉じて新しいファイルを作成するような動作です。その時間、データ大小、又は事件の数に基づいて設定できる。また、タイムスタンプ（timestamp）などの属性に基づいてデータを仕切って保存することもできる。
+
+```
+a1.channels = c1
+a1.sinks = k1
+a1.sinks.k1.type = hdfs
+a1.sinks.k1.channel = c1
+a1.sinks.k1.hdfs.path = /flume/events/%Y-%m-%d/%H%M/%S
+a1.sinks.k1.hdfs.filePrefix = events-
+a1.sinks.k1.hdfs.round = true
+a1.sinks.k1.hdfs.roundValue = 10
+a1.sinks.k1.hdfs.roundUnit = minute
+```
+
+**Hive Sink**：このSinkは、テキスト又はJSONデータを含む事件を受け取り、それらを直接Hiveテーブル又は区分（partition）に転送できる。事件はHiveトランザクションを使用して書き込まれる。一旦事件をHiveに提出すると、直ぐにHiveに検索してきてある。Flumeは区分を事前に作成することも、区分存在しない場合に作成することもできる。入力の事件データからのフィールドは、Hiveテーブルの対応する列に分配される。
+
+```
+create table weblogs ( id int , msg string )
+    partitioned by (continent string, country string, time string)
+    clustered by (id) into 5 buckets
+    stored as orc;
+
+a1.channels = c1
+a1.channels.c1.type = memory
+a1.sinks = k1
+a1.sinks.k1.type = hive
+a1.sinks.k1.channel = c1
+a1.sinks.k1.hive.metastore = thrift://127.0.0.1:9083
+a1.sinks.k1.hive.database = logsdb
+a1.sinks.k1.hive.table = weblogs
+a1.sinks.k1.hive.partition = asia,%{country},%Y-%m-%d-%H-%M
+a1.sinks.k1.useLocalTimeStamp = false
+a1.sinks.k1.round = true
+a1.sinks.k1.roundValue = 10
+a1.sinks.k1.roundUnit = minute
+a1.sinks.k1.serializer = DELIMITED
+a1.sinks.k1.serializer.delimiter = "\t"
+a1.sinks.k1.serializer.serdeSeparator = '\t'
+a1.sinks.k1.serializer.fieldnames =id,,msg
+```
+
+**logger sink**：直接に事件情報を画面に出力させる。通常、これはテストやデバッグに使用される。唯一の例外で原稿データの部分で説明されている追加の設定を必要としない。

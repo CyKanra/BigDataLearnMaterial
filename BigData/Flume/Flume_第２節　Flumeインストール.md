@@ -19,7 +19,7 @@ mv apache-flume-1.9.0-bin flume-1.9.0
 
 ![image-20230922160218706](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230922160218706.png)
 
-環境変数改修
+**環境変数改修**
 
 ```
 vim /etc/profile
@@ -34,7 +34,7 @@ source /etc/profile
 
 ![image-20230922162001633](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20230922162001633.png)
 
-Flume配置改修
+**Flume配置改修**
 
 ```
 #配置目録に入って

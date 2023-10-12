@@ -20,4 +20,31 @@
 
 - **順序節点（Sequential）**: 順序節点は、節点名の後ろに数字の接尾辞を付けて作成される節点です。これにより、節点が作成された順序が保持される。
 
-　　ZooKeeperのトランザクションには、ZooKeeperサーバーの状態を変更する操作を指し、データ更新など操作だけではない、節点の作成、削除、内容の更新なども含む。各トランザクション請求には、唯一のグローバルなトランザクションID（ZXID）が割り当てられ、通常は64ビットの数字で表される。各ZXIDは一回の更新操作を示し、これらのZXIDからZooKeeperが更新操作請求を処理した順序を識別することができる。
+　　ZooKeeperのトランザクションには、節点データ更新など操作だけではない、ZooKeeperサーバーの状態を変更する操作を指し、節点の作成、削除、内容の更新なども含む。各トランザクション請求には、唯一の全局トランザクションID（ZXID）が割り当てられ、通常は64ビットの数字で表される。各ZXIDは一回の更新操作を示し、これらのZXIDからZooKeeperが更新操作請求を処理した順序を識別することができる。
+
+### 第３節　 ZNodeの状態情報
+
+　　zookeeper-3.4.14/bin目録に入ってzkCli.shを執行する。
+
+![image-20231012152605729](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20231012152605729.png)
+
+```
+# zookeeper訪問画面にZNodeの状態情報を検査
+get /zookeeper
+```
+
+![image-20231012153124019](C:\Users\Izaya\AppData\Roaming\Typora\typora-user-images\image-20231012153124019.png)
+
+　　全ての節点情報が節点状態とメモリー内容の状態二つの部に分ける。以下に示すように毎変数を説明する。
+
+- **cZxid (Create ZXID)**: znodeが作成された際のトランザクションIDを示す。
+- **ctime (Create Time)**: znodeが作成された時間を示す。
+- **mZxid (Modified ZXID)**: znodeが最後に変更された際のトランザクションIDを示す。
+- **mtime (Modified Time)**: znodeが最後に変更された時間を示す。
+- **pZxid**: このznodeの子節点リストが最後に変更された際のトランザクションIDを示す。子節点の内容が変更されてもpZxidは更新されません。子節点のリストの変更時のみ更新される。
+- **cversion**: 子節点のバージョン番号、znode子節点の改修次数を示す。
+- **dataVersion**: データのバージョン番号、データの改修次数を示す。
+- **aclVersion**: ACL（Access Control List）のバージョン番号、ACLの改修次数を示す。
+- **ephemeralOwner**: この臨時znodeが作成された際のセッションIDを示す。持続性節点の場合は値が0です。
+- **dataLength**: znodeのデータフィールドの長さを示す。
+- **numChildren**: 直下の子節点の数を示す。

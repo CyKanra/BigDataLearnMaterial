@@ -1,6 +1,6 @@
 # 分散型協調サービスフレームワーク -- Zookeeper-3
 
-## 第３章　Zookeeperのデータ結構と監聴機能
+## 第３章　Zookeeperのデータ結構と機構
 
 ### 第１節　Zookeeperのデータる構
 
@@ -48,3 +48,17 @@ get /zookeeper
 - **ephemeralOwner**: この臨時znodeが作成された際のセッションIDを示す。持続性節点の場合は値が0です。
 - **dataLength**: znodeのデータフィールドの長さを示す。
 - **numChildren**: 直下の子節点の数を示す。
+
+### 第４節　 ZNodeのWatcher機構
+
+　　ZooKeeperは、分散データの発行/購読機能を実現するためにWatche機構を使用している。典型的な発行/購読模式では、1つの主題対象を複数の購読者が同時に監聴できる一対多の関係を定義し、主題対象の状態が変化すると全ての購読者に通知され、それに応じた処理を行えるようにする。
+
+　　ZooKeeperでは、このような分散通知機能を実現するためにWatche機構が導入されている。クライアントがサーバーに特定の事件を監聴するならWatcherを登録する必要です。サーバー上で指定された事件が発生すると、ZooKeeperは指定されたクライアントに事件通知を送信し、分散通知機能を実現する。
+
+
+
+　　ZooKeeperのWatcher機構は、クライアント、クライアントのWatcherManager、ZooKeeperサーバーの3つの主要な部分から構成されている。
+
+- クライアントはZooKeeperサーバに登録する際に、Watcherの象をクライアントのWatcherManagerに保存する。
+- ZooKeeperサーバでWatcher事件が触発されると、サーバはクライアントに通知を送信する。
+- その後、クライアントは対応のWatcher対象をWatcherManagerから取り出し、呼び出し返しを実行する。

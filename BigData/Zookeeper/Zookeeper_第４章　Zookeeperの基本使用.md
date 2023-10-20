@@ -100,3 +100,51 @@ delete path
 ```
 
 ![image-20231018180823621](D:\OneDrive\图片\Typora\image-20231018180823621.png)
+
+### 第２節　Zookeeperのクライアント
+
+　　ZkClientは、GitHub上で提供されているオープンソースのZooKeeperクライアントです。Zookeeperの原生APIインターフェースを包んでおり、より使いやすいZooKeeperクライアントとして使用する。また、ZkClientは会話（session）のタイムアウト時の再接続や、Watcherの再登録などの機能を内部で実装している。
+
+　　次に、ZkClientというZooKeeperクライアントの使用方法を、会話の作成、節点の作成、データの読み取り、データの更新、節点の削除など紹介してくる。
+
+**依存の添加**
+
+```
+<dependency>
+	<groupId>com.101tec</groupId>
+	<artifactId>zkclient</artifactId>
+	<version>0.11</version>
+</dependency>
+```
+
+**会話の作成**
+
+　　会話を作成の過程がただ１行ソースでいい、使用しやすいということです。若し、明らかにエラー情報が出すことがない、会話の作成が成功だと見なす。
+
+```
+public class CreateSession {
+
+    public static void main(String[] args) throws IOException {
+        ZkClient zkClient = new ZkClient("192.168.31.131:2181");
+        System.out.println("ZooKeeper session created");
+    }
+}
+```
+
+**節点の作成**
+
+　　ZkClientが、再帰可に節点を作成するのインターフェースが提供してあり、「createPersistent」変数をtrueに設定し、最終の節点前に親節点が作成しておく。
+
+```
+public class CreateNode {
+
+    public static void main(String[] args) {
+        ZkClient zkClient = new ZkClient("192.168.31.131:2181");
+        System.out.println("ZooKeeper session established.");
+        zkClient.createPersistent("/znode-zkClient/znode1",true);
+        System.out.println("success create znode.");
+    }
+}
+```
+
+![image-20231020193339762](D:\OneDrive\图片\Typora\image-20231020193339762.png)

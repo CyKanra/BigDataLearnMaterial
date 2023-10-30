@@ -55,8 +55,6 @@ get /zookeeper
 
 　　ZooKeeperでは、このような分散通知機能を実現するためにWatche機構が導入されている。クライアントがサーバーに特定の事件を監聴するならWatcherを登録する必要です。サーバー上で指定された事件が発生すると、ZooKeeperは指定されたクライアントに事件通知を送信し、分散通知機能を実現する。
 
-
-
 　　ZooKeeperのWatcher機構は、クライアント、クライアントのWatcherManager、ZooKeeperサーバーの3つの主要な部分から構成されている。
 
 - クライアントはZooKeeperサーバに登録する際に、Watcherの象をクライアントのWatcherManagerに保存する。

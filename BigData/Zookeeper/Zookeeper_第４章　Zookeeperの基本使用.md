@@ -77,7 +77,7 @@ ls  path
 get path 
 ```
 
-![image-20231018173456976](D:\OneDrive\图片\Typora\image-20231018173456976.png)
+![image-20231018173456976](D:\OneDrive\picture\Typora\image-20231018173456976.png)
 
 **節点の更新**
 
@@ -87,7 +87,7 @@ get path
 set path data
 ```
 
-![image-20231018175011750](D:\OneDrive\图片\Typora\image-20231018175011750.png)
+![image-20231018175011750](D:\OneDrive\picture\Typora\image-20231018175011750.png)
 
 　　二つの図を比較して変更時刻（mtime）を更新された、データ長さが３から４になった。データバージョンにとって毎回変更が発生するに伴い、バージョン番号が累増にする。つまり、内部データのファイルが節点のバージョンに一々対応する関係が存在です。
 
@@ -99,7 +99,7 @@ set path data
 delete path
 ```
 
-![image-20231018180823621](D:\OneDrive\图片\Typora\image-20231018180823621.png)
+![image-20231018180823621](D:\OneDrive\picture\Typora\image-20231018180823621.png)
 
 ### 第２節　Zookeeperのクライアント
 
@@ -147,4 +147,4 @@ public class CreateNode {
 }
 ```
 
-![image-20231020193339762](D:\OneDrive\图片\Typora\image-20231020193339762.png)
+![image-20231020193339762](D:\OneDrive\picture\Typora\image-20231020193339762.png)

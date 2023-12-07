@@ -12,9 +12,14 @@
 
 **Zookeeper**
 
-HBaseは内蔵のZookeeperを使用することも、外部のZookeeperを使用することもできます。実際の現行環境では、一致性を保証するために通常外部Zookeeperが使用される。ZookeeperがHBaseで果たす役割は以下の通り：
+　　HBaseは内蔵のZookeeperを使用することも、外部のZookeeperを使用することもできます。実際の現行環境では、一致性を保証するために通常外部Zookeeperが使用される。ZookeeperがHBaseで果たす役割は以下の通り：
 
-- いつでもクラスタ内には1つのmasterがあり、全てのRegionのアドレスの情報を保存する。
+- いつでもクラスタ内には1つのmasterがあると保証し、システムの高信頼性を実現した。。
+- 全てのRegionのアドレス情報を保存し、それはHBaseのメタデータです。
+
+![hbase-in-operation-l](D:\OneDrive\picture\Typora\hbase-in-operation-l.jpg)
+
+- そのため、何のデータの操作にはZookeeperを通して具体的な位置を取得しており、HBase自身が
 - Region Serverの状態を監視してリアルタイムでMasterに通知する。
 
 **HMaster**

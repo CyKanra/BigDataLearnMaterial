@@ -99,7 +99,7 @@ centos3
 centos4
 ```
 
-　　backup-mastersファイルを作成し、ある節点をBackup Masterとして指定する。HMasterが故障など発生して信号が中断するなら、Backup MasterがHMasterを代わりにクラスター任務を処理する。
+　　backup-mastersファイルを作成し、ある節点をBackup Masterとして指定する。HMasterが故障など発生して信号が中断する場合、Backup MasterがHMasterを代わりにクラスター任務を処理する。
 
 ```
 # backup-masters作成
@@ -172,7 +172,7 @@ stop-hbase.sh
 
 **外部訪問**
 
-　　クラスターを起動したら、外部からHBaseサービスを訪問できる。IPアドレスはHMaster又はBackup Master運行してるサービスです。HBaseサービス画面は多い情報を表してあり、後の章節に
+　　クラスターを起動したら、外部からHBaseサービスを訪問できる。IPアドレスはHMaster又はBackup Master運行してるサービスです。HBaseサービス画面は多い情報を表してあり、後の章節に詳しく紹介する。
 
 ```
 #IP:16010
@@ -180,3 +180,5 @@ http://centos4:16010/
 ```
 
 ![image-20231214082007369](D:\OneDrive\picture\Typora\image-20231214082007369.png)
+
+　　ここHBaseの高信頼性についてもっと説明しておく。高信頼性は二つの所で発現でき、Backup MastersやZookeeperが高信頼を提供してくれ、間に直接関係がない。前者はHMaster失効になる場合に控えとして準備する。後者は、HMaster下の各Region Serverが故障を発生する時に、HMasterに通知にしてHMasterが失効のRegion Serverの資源を再分配し、それもZookeeperに節点情報を改修する。Backup MastersやZookeeperの一番区別はZookeeper本体を控えとして差し替えられない、HMasterに調整的な役割を果たすだけ。

@@ -27,8 +27,8 @@
 　　整体のクラスター正常の運行を維持する役を担当する。
 
 - HMasterはデータのメタデータ情報を管理する。
-- Region ServerにRegionを割り当て、無効になったRegion Serverを発見し、その上のRegionを再割り当ててある。
-- 適当にRegionを割り当てを通してRegion Serverの負荷分散の効果を実現できる。
+- Region ServerにRegionを分配してあげ、無効になったRegion Serverを発見し、その対応のRegionを再分配してある。
+- 適当にRegionを分配を通してRegion Serverの負荷分散の効果を実現でき、例えば、あるRegion Serverが負荷が重すぎ、幾つかRegionを他のサーバに転移してある。
 - HDFS上のゴミファイルの回収する。
 
 **HRegion Server（Region Server）**

@@ -99,7 +99,7 @@ centos3
 centos4
 ```
 
-　　backup-mastersファイルを作成し、ある節点を副Masterとして指定
+　　backup-mastersファイルを作成し、ある節点をBackup Masterとして指定する。HMasterが故障など発生して信号が中断するなら、Backup MasterがHMasterを代わりにクラスター任務を処理する。
 
 ```
 # backup-masters作成
@@ -146,7 +146,7 @@ source /etc/profile
 
 ![image-20231213075257641](D:\OneDrive\picture\Typora\image-20231213075257641.png)
 
-　　hbase-1.3.1/bin目録下のstart-hbase.shを実行する。
+　　hbase-1.3.1/bin目録下のstart-hbase.shを実行する。どっちのサーバに命令を実行しても全体のクラスターを運行／停止できる。
 
 ```
 # 起動
@@ -158,12 +158,25 @@ stop-hbase.sh
 
 ![image-20231213080026842](D:\OneDrive\picture\Typora\image-20231213080026842.png)
 
-　　
-
 ![image-20231213080105364](D:\OneDrive\picture\Typora\image-20231213080105364.png)
 
 ![image-20231213080118692](D:\OneDrive\picture\Typora\image-20231213080118692.png)
 
 ![image-20231213080138392](D:\OneDrive\picture\Typora\image-20231213080138392.png)
 
-![image-20231213080153100](D:\OneDrive\picture\Typora\image-20231213080153100.png)
+![image-20231213222253514](D:\OneDrive\picture\Typora\image-20231213222253514.png)
+
+　　centos3サーバにのHMasterはBackup Mastersファイルに設定されたのHMasterのバックアップです。centos1には実際に全てのクラスターを管理するHMasterです。HMasterは最初起動する時に節点を選んで決める。
+
+![image-20231213224430414](D:\OneDrive\picture\Typora\image-20231213224430414.png)
+
+**外部訪問**
+
+　　クラスターを起動したら、外部からHBaseサービスを訪問できる。IPアドレスはHMaster又はBackup Master運行してるサービスです。HBaseサービス画面は多い情報を表してあり、後の章節に
+
+```
+#IP:16010
+http://centos4:16010/
+```
+
+![image-20231214082007369](D:\OneDrive\picture\Typora\image-20231214082007369.png)

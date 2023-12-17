@@ -182,3 +182,10 @@ http://centos4:16010/
 ![image-20231214082007369](D:\OneDrive\picture\Typora\image-20231214082007369.png)
 
 　　ここHBaseの高信頼性についてもっと説明しておく。高信頼性は二つの所で発現でき、Backup MastersやZookeeperが高信頼を提供してくれ、間に直接関係がない。前者はHMaster失効になる場合に控えとして準備する。後者は、HMaster下の各Region Serverが故障を発生する時に、HMasterに通知にしてHMasterが失効のRegion Serverの資源を再分配し、それもZookeeperに節点情報を改修する。Backup MastersやZookeeperの一番区別はZookeeper本体を控えとして差し替えられない、HMasterに調整的な役割を果たすだけ。
+
+**起動流れ**
+
+　　どれかサーバーにHBaseサービスを起動して構わない、選ばれた節点がHMasterとして運行してる。それに伴って配置ファイルに定義されたBackup Masterは主節点の控えとして運行する。
+
+![image-20231218080307919](D:\OneDrive\picture\Typora\image-20231218080307919.png)
+

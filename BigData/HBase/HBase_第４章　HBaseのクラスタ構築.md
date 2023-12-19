@@ -105,7 +105,7 @@ centos4
 # backup-masters作成
 vim backup-masters
 
-# 節点を指定
+# 節点を指定、複数の設定ができ
 centos3
 ```
 
@@ -181,11 +181,21 @@ http://centos4:16010/
 
 ![image-20231214082007369](D:\OneDrive\picture\Typora\image-20231214082007369.png)
 
-　　ここHBaseの高信頼性についてもっと説明しておく。高信頼性は二つの所で発現でき、Backup MastersやZookeeperが高信頼を提供してくれ、間に直接関係がない。前者はHMaster失効になる場合に控えとして準備する。後者は、HMaster下の各Region Serverが故障を発生する時に、HMasterに通知にしてHMasterが失効のRegion Serverの資源を再分配し、それもZookeeperに節点情報を改修する。Backup MastersやZookeeperの一番区別はZookeeper本体を控えとして差し替えられない、HMasterに調整的な役割を果たすだけ。
+　　ここHBaseの高信頼性についてもっと説明する。先ず、高信頼性の表現は二つの所で発現でき、Backup MastersやZookeeperと、それが共同に高信頼を提供してくれ、互いには協力関係です。HMaster失効になる場合に控えとして準備しておき、複数の控えが存在してるのはZookeeperがその中に一つの選べてくれる。次、HMaster下の各Region Serverが故障を発生する場合に、HMasterに通知にしてHMasterが失効のRegion Serverの資源を再分配し、且つZookeeperに節点情報を改修、消除など操作を実行してある。ZookeeperはHMasterを補佐してクラスターの高信頼性を保証する。
 
-**起動流れ**
+**起動と故障**
 
-　　どれかサーバーにHBaseサービスを起動して構わない、選ばれた節点がHMasterとして運行してる。それに伴って配置ファイルに定義されたBackup Masterは主節点の控えとして運行する。
+　　どれかサーバーからHBaseサービスを起動して構わない、選ばれた節点がHMasterとして運行してる。それに伴って配置ファイルに定義されたBackup Masterは主節点の控えとして運行し、最後にHRegionServerサービスを起動する。HMaster故障が発生する限り、Backup Masterずっと休眠状態にしている。
+
+　　HMaster故障になる場合、クラスターは直ぐにBackup MasterにHMasterを差し替え、実行している任務を受け継ぐこともでき、クライアントにはこの変化を感じない。それに対してZookeeper内の節点情報を改修しておき、元のHMasterの登録情報を消除し、Backup Master情報を改めて書き込んでHMasterとして登録する。
+
+　　非HMasterの節点が失効になるのはHMasterがZookeeperのこの節点情報も消除してあり、完全に故障節点を排除する。そのため、除名された節点が通信を回復しても自動的にクラスターに加入することがない、この節点のHBaseサービスHRegionSeverも停止した。従って、改めて失効節点をクラスターに添加しようと、必ず手動して失効のサービスを起こす。
+
+![image-20231219192852103](D:\OneDrive\picture\Typora\image-20231219192852103.png)
+
+　　start-hbase.sh命令を実行してcentos2の
+
+![image-20231219192031454](D:\OneDrive\picture\Typora\image-20231219192031454.png)
 
 ![image-20231218080307919](D:\OneDrive\picture\Typora\image-20231218080307919.png)
 

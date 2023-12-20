@@ -193,7 +193,7 @@ http://centos4:16010/
 
 ![image-20231219192852103](D:\OneDrive\picture\Typora\image-20231219192852103.png)
 
-　　start-hbase.sh命令を実行してcentos2の
+　　そうして、start-hbase.sh命令を実行してみてcentos2のサービスを起こしていく。結局下図HBaseの画面の表れてcentos2がBackup Masterになり、二つの存在がある。この現象はどうHMasterを決めることに関する。それは、どっち節点でHMasterプロセスを運行するのに関わらず、最初起動したのHMasterプロセスがZookeeperにHMasterとして登録でき、他のHMasterプロセスにはHMaster登録情報があると発見すると、Baskup MasterとしてZookeeperに登録するという規則がある。
 
 ![image-20231219192031454](D:\OneDrive\picture\Typora\image-20231219192031454.png)
 

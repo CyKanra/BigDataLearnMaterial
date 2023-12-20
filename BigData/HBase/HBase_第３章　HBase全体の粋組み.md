@@ -35,8 +35,8 @@
 
 　　実際に働くの役と、最終にデータを読み書く操作はHRegion Serverが担当する。
 
-- HMasterによって割り当てられたRegionを維持する。あるRegion過大になった場合、そのRegionを分割する責任を担当する。
-- データの読み書き流れは、HMasterの参加は必要ない、Zookeeper及びClientキャッシュからデータのアドレスを取得して直接に請求をHRegion Serverに発送する。
+- 割り当てられたRegionを維持し、あるRegion過大になった場合、そのRegionを分割する責任を担当する。
+- データの読み書き流れは、ある時HMasterの参加は必要ない、Clientキャッシュからデータのアドレスを取得して直接に請求をHRegion Serverに発送する。
 
 **HRegion（Region）**
 

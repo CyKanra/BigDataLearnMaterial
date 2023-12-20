@@ -99,7 +99,7 @@ centos3
 centos4
 ```
 
-　　backup-mastersファイルを作成し、ある節点をBackup Masterとして指定する。HMasterが故障など発生して信号が中断する場合、Backup MasterがHMasterを代わりにクラスター任務を処理する。
+　　backup-mastersファイルを作成し、ある節点をBackup Masterとして指定する。HMasterが故障など発生して信号が中断する場合、Backup MasterがHMasterを受け継いでクラスター任務を処理する。最大の起動できるBackup Master個数が9です。つまり、本来のHMasterに加えて10個のHMasterプロセスを運動できる。
 
 ```
 # backup-masters作成
@@ -183,19 +183,20 @@ http://centos4:16010/
 
 　　ここHBaseの高信頼性についてもっと説明する。先ず、高信頼性の表現は二つの所で発現でき、Backup MastersやZookeeperと、それが共同に高信頼を提供してくれ、互いには協力関係です。HMaster失効になる場合に控えとして準備しておき、複数の控えが存在してるのはZookeeperがその中に一つの選べてくれる。次、HMaster下の各Region Serverが故障を発生する場合に、HMasterに通知にしてHMasterが失効のRegion Serverの資源を再分配し、且つZookeeperに節点情報を改修、消除など操作を実行してある。ZookeeperはHMasterを補佐してクラスターの高信頼性を保証する。
 
-**起動と故障**
+**節点の起動と回復**
 
-　　どれかサーバーからHBaseサービスを起動して構わない、選ばれた節点がHMasterとして運行してる。それに伴って配置ファイルに定義されたBackup Masterは主節点の控えとして運行し、最後にHRegionServerサービスを起動する。HMaster故障が発生する限り、Backup Masterずっと休眠状態にしている。
+　　どれかサーバーからHBaseサービスを起動して構わない、選ばれた節点がHMasterとして運行してる。それに伴って配置ファイルに定義されたBackup Masterは主節点の控えとして運行し、最後にHRegionServerサービスを起動しよう。HMaster故障が発生する限り、Backup MasterのHMasterプロセスがずっと休眠状態にしている。
 
-　　HMaster故障になる場合、クラスターは直ぐにBackup MasterにHMasterを差し替え、実行している任務を受け継ぐこともでき、クライアントにはこの変化を感じない。それに対してZookeeper内の節点情報を改修しておき、元のHMasterの登録情報を消除し、Backup Master情報を改めて書き込んでHMasterとして登録する。
+　　HMaster故障になる場合、クラスターは直ぐにBackup MasterにHMasterを差し替え、実行している任務を受け継ぐこともでき、クライアントにはこの変化を感じない。それに対してZookeeper内の節点情報を改修しておき、元のHMasterの登録情報やBackup Master登録情報を消除し、Backup Master情報を改めて書き込んでHMasterとして登録する。
 
-　　非HMasterの節点が失効になるのはHMasterがZookeeperのこの節点情報も消除してあり、完全に故障節点を排除する。そのため、除名された節点が通信を回復しても自動的にクラスターに加入することがない、この節点のHBaseサービスHRegionSeverも停止した。従って、改めて失効節点をクラスターに添加しようと、必ず手動して失効のサービスを起こす。
+　　非HMasterの節点が失効になるのはHMasterがZookeeperのこの節点情報も消除してあり、完全に故障節点を排除する。そのため、除名された節点が通信を回復しても自動的にクラスターに加入することがない、この節点のHRegionSeverプロセスも停止した。従って、改めて失効節点をクラスターに添加しようと、必ず手動して失効のサービスを起こす。
 
 ![image-20231219192852103](D:\OneDrive\picture\Typora\image-20231219192852103.png)
 
-　　そうして、start-hbase.sh命令を実行してみてcentos2のサービスを起こしていく。結局下図HBaseの画面の表れてcentos2がBackup Masterになり、二つの存在がある。この現象はどうHMasterを決めることに関する。それは、どっち節点でHMasterプロセスを運行するのに関わらず、最初起動したのHMasterプロセスがZookeeperにHMasterとして登録でき、他のHMasterプロセスにはHMaster登録情報があると発見すると、Baskup MasterとしてZookeeperに登録するという規則がある。
+　　そうして、start-hbase.sh命令を実行してみてcentos2のサービスを起こしていく。結局下図HBaseの画面に表れてcentos2がBackup Masterになり、二つの存在があり、それとHMasterの選択流れに関してある。どっち節点でHMasterプロセスを運行するのに関わらず、最初起動したのHMasterプロセスがZookeeperにHMasterとして登録でき、他のHMasterプロセスにはHMaster登録情報があると発見すると、Baskup MasterとしてZookeeperに登録するという規則です。
 
 ![image-20231219192031454](D:\OneDrive\picture\Typora\image-20231219192031454.png)
 
 ![image-20231218080307919](D:\OneDrive\picture\Typora\image-20231218080307919.png)
 
+　　前に紹介したbackup-mastersファイルに節点IPアドレスを書くの本質はHMasterプロセスを遅れに起動し、一番の起動された節点がHMasterの権限を得るし、別のHMasterプロセスが休眠状態になる。Backup Masterを選べてHMasterを差し替えも早い者が先ずHMasterの権限を得ることに従うんです。

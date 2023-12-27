@@ -35,9 +35,13 @@ create 'studentInfo', {NAME => 'base_info', VERSIONS => '3'},{NAME => 'extra_inf
 
 **データ操作**
 
+　　HBaseは非関係データベースですが、その内に庫の概念がない。データの操作を実行する前にどっちの庫で指定することが必要ない。あと、データを挿入するのは一つ一つのフィールド値で添加するだけ、HBaseがテーブル概念があるけれど。
+
 ```
 # 添加
 put 'studentInfo', 'rk1', 'base_info:name', 'John Doe'
+# 複数のフィールド値を共に入力するのが駄目です
+put 'studentInfo', 'rk1', 'base_info:name', 'John Doe', 'base_info:sex', '1'
 
 # フィールド添加、一つ一つのフィールドでデータ添加だけ
 put 'studentInfo', 'rk1', 'base_info:sex', '1'
@@ -70,3 +74,56 @@ truncate 'lagou'
 ```
 
 **データ検索**
+
+```
+# データ添加
+put 'studentInfo', 'rk1', 'base_info:name', 'John Doe'
+put 'studentInfo', 'rk1', 'base_info:sex', '1'
+put 'studentInfo', 'rk1', 'base_info:birthday', '1990/05/15'
+put 'studentInfo', 'rk1', 'extra_info:math_grade', '85'
+put 'studentInfo', 'rk1', 'extra_info:history_grade', '78'
+
+put 'studentInfo', 'rk2', 'base_info:name', 'Jane Smith'
+put 'studentInfo', 'rk2', 'base_info:sex', '0'
+put 'studentInfo', 'rk2', 'base_info:birthday', '1988/11/22'
+put 'studentInfo', 'rk2', 'extra_info:math_grade', '92'
+put 'studentInfo', 'rk2', 'extra_info:history_grade', '88'
+
+put 'studentInfo', 'rk3', 'base_info:name', 'Mike Johnson'
+put 'studentInfo', 'rk3', 'base_info:sex', '1'
+put 'studentInfo', 'rk3', 'base_info:birthday', '1995/07/10'
+put 'studentInfo', 'rk3', 'extra_info:math_grade', '78'
+put 'studentInfo', 'rk3', 'extra_info:history_grade', '65'
+
+put 'studentInfo', 'rk4', 'base_info:name', 'Emily Davis'
+put 'studentInfo', 'rk4', 'base_info:sex', '0'
+put 'studentInfo', 'rk4', 'base_info:birthday', '1992/03/03'
+put 'studentInfo', 'rk4', 'extra_info:math_grade', '95'
+put 'studentInfo', 'rk4', 'extra_info:history_grade', '91'
+
+put 'studentInfo', 'rk5', 'base_info:name', 'Chris Brown'
+put 'studentInfo', 'rk5', 'base_info:sex', '1'
+put 'studentInfo', 'rk5', 'base_info:birthday', '1987/09/28'
+put 'studentInfo', 'rk5', 'extra_info:math_grade', '89'
+put 'studentInfo', 'rk5', 'extra_info:history_grade', '75'
+```
+
+　　フィールドが違ってもエラーメッセージ、空値など返してのがない、何も表れないだけです。
+
+```
+# rowkeyイコールrk1データを検索
+get 'studentInfo', 'rk1'
+
+# rk1下に指定された列族を検索
+get 'studentInfo', 'rk1', 'base_info'
+# 複数の列族を指定
+get 'studentInfo', 'rk1', 'base_info', 'extra_info'
+get 'studentInfo', 'rk1', {COLUMN => ['base_info', 'extra_info']}
+
+# 指定されたフィールドを検索
+get 'studentInfo', 'rk1', 'base_info:name', 'base_info:sex'
+get 'studentInfo', 'rk1', {COLUMN => ['base_info:name', 'extra_info:math_grade']}
+```
+
+![image-20231227112034965](D:\OneDrive\picture\Typora\image-20231227112034965.png)
+

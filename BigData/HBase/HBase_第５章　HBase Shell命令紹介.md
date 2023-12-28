@@ -108,7 +108,7 @@ put 'studentInfo', 'rk5', 'extra_info:math_grade', '89'
 put 'studentInfo', 'rk5', 'extra_info:history_grade', '75'
 ```
 
-　　フィールドが違ってもエラーメッセージ、空値など返してのがない、何も表れないだけです。
+　　フィールド名が違ってもエラーメッセージ、空値など返してのがない、何も表れないだけです。
 
 ```
 # rowkeyイコールrk1データを検索
@@ -127,3 +127,33 @@ get 'studentInfo', 'rk1', {COLUMN => ['base_info:name', 'extra_info:math_grade']
 
 ![image-20231227112034965](D:\OneDrive\picture\Typora\image-20231227112034965.png)
 
+```
+# 全体のデータを取得
+scan 'studentInfo'
+```
+
+　　Get命令は、一つの行のデータを取得するためのもので、一種の特殊なScan操作と考えることができる。ただし、Getは一つの行のデータのみを必ずRowKey変数をついて取得し、Scanは複数の行のデータを取得する。特定の行を検索する必要がある場合、Get命令を使用するとScan命令よりも効率的です。
+
+　　Scan命令は、複数の行をスキャンするためのAPIです。これは一つ又は複数の範囲から複数の行のデータを取得し、データの濾過と並び替えにするために使用できる。
+
+
+
+
+
+
+
+以下是一些常用的 HBase shell 命令：
+
+- `create <table>, {NAME => <family>, VERSIONS => <VERSIONS>}`：创建表。
+- `list`：列出所有已创建的表。
+- `describe <table>`：显示表相关的详细信息。
+- `put <table>,<rowkey>,<family:column>,<value>`：向指定表单元添加值。
+- `get <table>,<rowkey>`：获取行的值。
+- `delete <table>,<rowkey>,<family:column>`：删除指定对象的值。
+- `deleteall <table>,<rowkey>`：删除指定行的所有元素值。
+- `scan <table>`：通过对表的扫描来获取对应的值。
+- `count <table>`：统计表中行的数量。
+- `disable <table>`：使表无效。
+- `enable <table>`：使表有效。
+- `drop <table>`：删除表。
+- `exit`：退出 HBase shell。

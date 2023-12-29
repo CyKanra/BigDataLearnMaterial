@@ -2,38 +2,31 @@
 
 ## 第５章　HBase Shell命令紹介
 
-Hbaseクライアント画面に入って、クラスター中に任意の節点を選べられる。
+　　関係データベースみたいの実行語句には、HBaseデータベースでこの語句がShell命令と呼ばれ、検索語句ではない。その設定の上に、複合の語句で検索することが支持しない、Jasonみたい書き方も理解しにくいなど特徴がある。
 
 ```
+# 任意の節点に登録でき
 hbase shell
+# ヘルプ
+help
+# テーブル検査
+list
 ```
 
 ![image-20231222074643934](D:\OneDrive\picture\Typora\image-20231222074643934.png)
 
-**ヘルプファイル**
-
-```
-help
-```
-
-**テーブル検査**
-
-```
-list
-```
-
-**テーブル作成**
+#### テーブル作成
 
 ```
 create 'studentInfo', 'base_info', 'extra_info'
-# 又は
+
 # VERSIONSイコール3意味は最近三つのバケーションデータを保留
 create 'studentInfo', {NAME => 'base_info', VERSIONS => '3'},{NAME => 'extra_info',VERSIONS => '3'}
 ```
 
 ![image-20231225065123273](D:\OneDrive\picture\Typora\image-20231225065123273.png)
 
-**データ操作**
+#### データ操作
 
 　　HBaseは非関係データベースですが、その内に庫の概念がない。データの操作を実行する前にどっちの庫で指定することが必要ない。あと、データを挿入するのは一つ一つのフィールド値で添加するだけ、HBaseがテーブル概念があるけれど。
 
@@ -73,7 +66,7 @@ delete 'lagou', 'rk1', 'base_info:age'
 truncate 'lagou'
 ```
 
-**データ検索**
+#### データ検索
 
 ```
 # データ添加
@@ -108,7 +101,9 @@ put 'studentInfo', 'rk5', 'extra_info:math_grade', '89'
 put 'studentInfo', 'rk5', 'extra_info:history_grade', '75'
 ```
 
-　　フィールド名が違ってもエラーメッセージ、空値など返してのがない、何も表れないだけです。
+**単一の行**
+
+　　RowKeyを指定して単一の行を検査し出すとget命令を使う。
 
 ```
 # rowkeyイコールrk1データを検索
@@ -127,18 +122,68 @@ get 'studentInfo', 'rk1', {COLUMN => ['base_info:name', 'extra_info:math_grade']
 
 ![image-20231227112034965](D:\OneDrive\picture\Typora\image-20231227112034965.png)
 
+　　フィールド名が違ってもエラーメッセージ、空値。ど返してのがない、何も表れないだけです。
+
+**複数の行**
+
+　　Get命令は、一つの行のデータを取得するためのもので、一種の特殊なScan操作と考えることができる。ただし、Getは一つの行のデータのみを必ずRowKey変数をついて取得し、Scanは複数の行のデータを取得する。特定の行を検索する必要がある場合、Get命令を使用するとScan命令よりも効率的です。
+
+　　Scan命令は、複数の行をスキャンして表すためのAPIです。これは一つ又は複数の範囲から複数の行のデータを取得し、データの濾過と並び替えに役に立つ。
+
 ```
 # 全体のデータを取得
 scan 'studentInfo'
 ```
 
-　　Get命令は、一つの行のデータを取得するためのもので、一種の特殊なScan操作と考えることができる。ただし、Getは一つの行のデータのみを必ずRowKey変数をついて取得し、Scanは複数の行のデータを取得する。特定の行を検索する必要がある場合、Get命令を使用するとScan命令よりも効率的です。
+**列族やフィールド**
 
-　　Scan命令は、複数の行をスキャンするためのAPIです。これは一つ又は複数の範囲から複数の行のデータを取得し、データの濾過と並び替えにするために使用できる。
+```
+# base_info列族検査
+scan 'studentInfo', {COLUMNS => 'base_info'}
+# 具体的なフィールド値検査
+# 複数の列族又はフィールドの検索は「,」で分割して[]に並べ替える、
+scan 'studentInfo', {COLUMNS => ['base_info', 'extra_info']}
+scan 'studentInfo', {COLUMNS => ['base_info:name', 'extra_info:history_grade']}
+
+# VERSIONSバケーション番号を指定でき、例えば、全て保留できるバケーション数が3、「VERSIONS => 3」が最大のバケーション値を表す
+scan 'studentInfo', {COLUMNS => ['base_info:name', 'extra_info:history_grade'],  VERSIONS => 1}
+```
+
+![image-20231229101418006](D:\OneDrive\picture\Typora\image-20231229101418006.png)
+
+**RowKey範囲**
+
+```
+# rowkeyについて一定範囲内の検査、「rk5」データが含まれない
+scan 'studentInfo',{STARTROW=>'rk2',STOPROW=>'rk5'}
+```
+
+![image-20231229183417983](D:\OneDrive\picture\Typora\image-20231229183417983.png)
+
+**時間範囲**
+
+　　時間範囲の内にデータを検査し、範囲は前値t1以上かつ後値t2未満と「t1<=time<t2」ようです。1703630815431に等しいデータが表れない。ここの時間が実際のデータを挿入する時刻、バケーションではない。
+
+```
+# []の使い方が列族又はフィールドの検索と違う
+scan 'studentInfo',{TIMERANGE=>[1703630815262,1703630815431]}
+```
+
+![image-20231229113000993](D:\OneDrive\picture\Typora\image-20231229113000993.png)
+
+**曖昧検索**
+
+```
+scan 'table_name', {COLUMNS => 'column_family:column_name', FILTER => "filter_string"}
+```
 
 
 
+```
+scan 'studentInfo', {COLUMNS => ['base_info'], FILTER => "(QualifierFilter(=,'substring:a'))"}
+```
 
+![image-20231229081430145](D:\OneDrive\picture\Typora\image-20231229081430145.png)
 
 
 

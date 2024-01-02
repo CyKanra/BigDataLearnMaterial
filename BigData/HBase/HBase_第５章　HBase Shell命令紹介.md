@@ -153,18 +153,21 @@ scan 'studentInfo', {COLUMNS => ['base_info:name', 'extra_info:history_grade'], 
 
 **RowKey範囲**
 
+　　rowkeyについて一定範囲内の検査、STOPROWに対応のrowkeyが含まれない。
+
 ```
-# rowkeyについて一定範囲内の検査、「rk5」データが含まれない
-scan 'studentInfo',{STARTROW=>'rk2',STOPROW=>'rk5'}
+scan 'studentInfo', {STARTROW=>'rk2',STOPROW=>'rk5'}
+scan 'studentInfo', {COLUMNS => 'base_info', STARTROW => 'rk1', ENDROW => 'rk3'}
 ```
 
 ![image-20231229183417983](D:\OneDrive\picture\Typora\image-20231229183417983.png)
 
 **時間範囲**
 
-　　時間範囲の内にデータを検査し、範囲は前値t1以上かつ後値t2未満と「t1<=time<t2」ようです。1703630815431に等しいデータが表れない。ここの時間が実際のデータを挿入する時刻、バケーションではない。
+　　時間範囲の内にデータを検査し、範囲は前値t1以上かつ後値t2未満と「t1<=time<t2」ようです。ここの時間が実際のデータを挿入する時刻、バケーションではない。
 
 ```
+# 1703630815431に等しいデータが表れない
 # []の使い方が列族又はフィールドの検索と違う
 scan 'studentInfo',{TIMERANGE=>[1703630815262,1703630815431]}
 ```
@@ -177,7 +180,7 @@ scan 'studentInfo',{TIMERANGE=>[1703630815262,1703630815431]}
 scan 'table_name', {COLUMNS => 'column_family:column_name', FILTER => "filter_string"}
 ```
 
-
+　　大体の
 
 ```
 scan 'studentInfo', {COLUMNS => ['base_info'], FILTER => "(QualifierFilter(=,'substring:a'))"}

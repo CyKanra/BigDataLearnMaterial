@@ -140,8 +140,9 @@ scan 'studentInfo'
 ```
 # base_info列族検査
 scan 'studentInfo', {COLUMNS => 'base_info'}
+scan 'studentInfo', {COLUMNS => ['base_info']}
 # 具体的なフィールド値検査
-# 複数の列族又はフィールドの検索は「,」で分割して[]に並べ替える、
+# 複数の列族又はフィールドの検索は「,」で分割して[]に包まれる、
 scan 'studentInfo', {COLUMNS => ['base_info', 'extra_info']}
 scan 'studentInfo', {COLUMNS => ['base_info:name', 'extra_info:history_grade']}
 
@@ -168,11 +169,17 @@ scan 'studentInfo', {COLUMNS => 'base_info', STARTROW => 'rk1', ENDROW => 'rk3'}
 
 ```
 # 1703630815431に等しいデータが表れない
-# []の使い方が列族又はフィールドの検索と違う
+# []の意味が列族又はフィールドの検索と違う
 scan 'studentInfo',{TIMERANGE=>[1703630815262,1703630815431]}
 ```
 
 ![image-20231229113000993](D:\OneDrive\picture\Typora\image-20231229113000993.png)
+
+**完成一致検索**
+
+```
+scan 'studentInfo', {COLUMNS => 'base_info:name', FILTER => "(ValueFilter(=,'binary:a'))"}
+```
 
 **曖昧検索**
 
@@ -180,13 +187,13 @@ scan 'studentInfo',{TIMERANGE=>[1703630815262,1703630815431]}
 scan 'table_name', {COLUMNS => 'column_family:column_name', FILTER => "filter_string"}
 ```
 
-　　大体の
+　　大体の格式が上記の様です。ただ、不同の検索条件によって「filter_string」書き方の差別が大きい、ここで例を挙げて説明しよう。
 
 ```
-scan 'studentInfo', {COLUMNS => ['base_info'], FILTER => "(QualifierFilter(=,'substring:a'))"}
+scan 'studentInfo', {COLUMNS => 'base_info:name', FILTER => "(ValueFilter(=,'substring:a'))"}
 ```
 
-![image-20231229081430145](D:\OneDrive\picture\Typora\image-20231229081430145.png)
+![image-20240103111905946](D:\OneDrive\picture\Typora\image-20240103111905946.png)
 
 
 

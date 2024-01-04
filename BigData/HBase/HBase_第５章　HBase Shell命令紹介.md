@@ -178,8 +178,21 @@ scan 'studentInfo',{TIMERANGE=>[1703630815262,1703630815431]}
 **完成一致検索**
 
 ```
-scan 'studentInfo', {COLUMNS => 'base_info:name', FILTER => "(ValueFilter(=,'binary:a'))"}
+# 大文字と小文字が区別することある
+scan 'studentInfo', {COLUMNS => 'base_info:name', FILTER => "(ValueFilter(=,'binary:Jane Smith'))"}
+
+# 列を指定しなくても検索でき、ただRowKeyが含まれない
+scan 'studentInfo', {FILTER => "(ValueFilter(=,'binary:Jane Smith'))"}
 ```
+
+![image-20240104101922526](D:\OneDrive\picture\Typora\image-20240104101922526.png)
+
+```
+# 適当なデータが全てのフィールド値を表す
+scan 'studentInfo', {FILTER => "(SingleColumnValueFilter('base_info', 'name', =,'binary:Jane Smith'))"}
+```
+
+![image-20240104115350527](D:\OneDrive\picture\Typora\image-20240104115350527.png)
 
 **曖昧検索**
 

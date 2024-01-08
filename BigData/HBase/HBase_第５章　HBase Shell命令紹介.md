@@ -66,6 +66,18 @@ delete 'lagou', 'rk1', 'base_info:age'
 truncate 'lagou'
 ```
 
+#### 基本概念
+
+　　データ検索を紹介する前に幾つかHBase shell概念を説明し、詳しい内容が公式サイト([Apache HBase ™ Reference Guide](https://hbase.apache.org/book.html#thrift.filter_language))から了解できる。
+
+
+
+```
+scan 'table_name', {COLUMNS => 'column_family:column_name', FILTER => "FilterName (argument, argument,... , 'argument')"}
+```
+
+　大体の検索命令の書き方が上記の様子、不同の検索条件によって「FilterName(argument)」書き方の差別がある。次に例を挙げて具体的にキーワードを紹介する。
+
 #### データ検索
 
 ```
@@ -101,43 +113,12 @@ put 'studentInfo', 'rk5', 'extra_info:math_grade', '89'
 put 'studentInfo', 'rk5', 'extra_info:history_grade', '75'
 ```
 
-**単一の行**
-
-　　RowKeyを指定して単一の行を検査し出すとget命令を使う。
-
-```
-# rowkeyイコールrk1データを検索
-get 'studentInfo', 'rk1'
-
-# rk1下に指定された列族を検索
-get 'studentInfo', 'rk1', 'base_info'
-# 複数の列族を指定
-get 'studentInfo', 'rk1', 'base_info', 'extra_info'
-get 'studentInfo', 'rk1', {COLUMN => ['base_info', 'extra_info']}
-
-# 指定されたフィールドを検索
-get 'studentInfo', 'rk1', 'base_info:name', 'base_info:sex'
-get 'studentInfo', 'rk1', {COLUMN => ['base_info:name', 'extra_info:math_grade']}
-```
-
-![image-20231227112034965](D:\OneDrive\picture\Typora\image-20231227112034965.png)
-
-　　フィールド名が違ってもエラーメッセージ、空値。ど返してのがない、何も表れないだけです。
-
 **複数の行**
-
-　　Get命令は、一つの行のデータを取得するためのもので、一種の特殊なScan操作と考えることができる。ただし、Getは一つの行のデータのみを必ずRowKey変数をついて取得し、Scanは複数の行のデータを取得する。特定の行を検索する必要がある場合、Get命令を使用するとScan命令よりも効率的です。
-
-　　Scan命令は、複数の行をスキャンして表すためのAPIです。これは一つ又は複数の範囲から複数の行のデータを取得し、データの濾過と並び替えに役に立つ。
 
 ```
 # 全体のデータを取得
 scan 'studentInfo'
-```
 
-**列族やフィールド**
-
-```
 # base_info列族検査
 scan 'studentInfo', {COLUMNS => 'base_info'}
 scan 'studentInfo', {COLUMNS => ['base_info']}
@@ -179,34 +160,101 @@ scan 'studentInfo',{TIMERANGE=>[1703630815262,1703630815431]}
 
 ```
 # 大文字と小文字が区別することある
-scan 'studentInfo', {COLUMNS => 'base_info:name', FILTER => "(ValueFilter(=,'binary:Jane Smith'))"}
+scan 'studentInfo', {COLUMNS => 'base_info:name', FILTER => "ValueFilter(=,'binary:Jane Smith')"}
 
-# 列を指定しなくても検索でき、ただRowKeyが含まれない
-scan 'studentInfo', {FILTER => "(ValueFilter(=,'binary:Jane Smith'))"}
+# 列を指定しなくても検索でき、ただ検索の対象はRowKeyが含まれない
+scan 'studentInfo', {FILTER => "ValueFilter(=,'binary:Jane Smith')"}
+
+# 指定された値を除いてデータを表す
+scan 'studentInfo', {FILTER => "ValueFilter(!=,'binary:Jane Smith')"}
 ```
 
 ![image-20240104101922526](D:\OneDrive\picture\Typora\image-20240104101922526.png)
 
 ```
-# 適当なデータが全てのフィールド値を表す
-scan 'studentInfo', {FILTER => "(SingleColumnValueFilter('base_info', 'name', =,'binary:Jane Smith'))"}
+# 適当の値に対応の行を表す
+scan 'studentInfo', {FILTER => "SingleColumnValueFilter('base_info', 'name', =,'binary:Jane Smith')"}
 ```
 
-![image-20240104115350527](D:\OneDrive\picture\Typora\image-20240104115350527.png)
+![image-20240108120516096](D:\OneDrive\picture\Typora\image-20240108120516096.png)
+
+```
+# 適当の値に対応の列を表す
+scan 'studentInfo', {COLUMNS => 'base_info:name', FILTER => "QualifierFilter(=,'binary:Jane Smith')"}
+```
+
+![image-20240108120624097](D:\OneDrive\picture\Typora\image-20240108120624097.png)
+
+```
+# Rowkeyについての一致検索
+scan 'studentInfo',{FILTER=>"RowFilter(=,'binary:rk3')"}
+```
+
+![image-20240108143113288](D:\OneDrive\picture\Typora\image-20240108143113288.png)
 
 **曖昧検索**
 
 ```
-scan 'table_name', {COLUMNS => 'column_family:column_name', FILTER => "filter_string"}
-```
+# 適当のフィールド値のみを表す
+scan 'studentInfo', {COLUMNS => 'base_info:name', FILTER => "ValueFilter(=,'substring:a')"}
 
-　　大体の格式が上記の様です。ただ、不同の検索条件によって「filter_string」書き方の差別が大きい、ここで例を挙げて説明しよう。
-
-```
-scan 'studentInfo', {COLUMNS => 'base_info:name', FILTER => "(ValueFilter(=,'substring:a'))"}
+# 「!=」も使える
+scan 'studentInfo', {COLUMNS => 'base_info:name', FILTER => "ValueFilter(!=,'substring:a')"}
 ```
 
 ![image-20240103111905946](D:\OneDrive\picture\Typora\image-20240103111905946.png)
+
+　　ValueFilterなどキーワードを使って返しのデータを決めるだけ、本当の曖昧検索にするキーワードがsubstringです。
+
+```
+scan 'studentInfo', {COLUMNS => 'base_info:name', FILTER => "SingleColumnValueFilter(=,'substring:a')"}
+scan 'studentInfo', {COLUMNS => 'base_info:name', FILTER => "QualifierFilter(=,'substring:grad')"}
+```
+
+![image-20240105192126498](D:\OneDrive\picture\Typora\image-20240105192126498.png)
+
+```
+scan 'studentInfo',{FILTER=>"PrefixFilter('rk3')"}
+
+scan 'studentInfo',{FILTER=>"RowFilter(=,'substring:k3')"}
+```
+
+**単一の行**
+
+　　RowKeyを指定して単一の行を検査し出すとget命令を使える。Get命令は、一つの行のデータを取得するために一種の特殊なScan操作と考えることができ、特定の行を検索する必要がある場合、Get命令を使用するとScan命令よりも効率的です。
+
+　　Scan命令は、複数の行をスキャンして表すためのAPIです。これは一つ又は複数の範囲から複数の行のデータを取得し、データの濾過と並び替えに役に立つ。
+
+```
+# rowkeyイコールrk1データを検索
+get 'studentInfo', 'rk1'
+
+# rk1下に指定された列族を検索
+get 'studentInfo', 'rk1', 'base_info'
+# 複数の列族を指定
+get 'studentInfo', 'rk1', 'base_info', 'extra_info'
+get 'studentInfo', 'rk1', {COLUMN => ['base_info', 'extra_info']}
+
+# 指定されたフィールドを検索
+get 'studentInfo', 'rk1', 'base_info:name', 'base_info:sex'
+get 'studentInfo', 'rk1', {COLUMN => ['base_info:name', 'extra_info:math_grade']}
+```
+
+![image-20231227112034965](D:\OneDrive\picture\Typora\image-20231227112034965.png)
+
+　　フィールド名が存在しなくてもエラーメッセージ、空値など返すのがない、何も表れないんです。あと、HBaseのストレージ結構はkey-vlue形式で格納し、一行の複数の列に同時に完全一致検索や曖昧検索も行える。
+
+```
+get 'studentInfo', 'rk2', {FILTER => "(ValueFilter(=,'substring:a'))"}
+get 'studentInfo', 'rk2', {FILTER => "(QualifierFilter(=,'substring:a'))"}
+
+# SingleColumnValueFilterキーワードが使えない
+get 'studentInfo', 'rk2', {FILTER => "(SingleColumnValueFilter(=,'substring:a'))"}
+```
+
+![image-20240108104120714](D:\OneDrive\picture\Typora\image-20240108104120714.png)
+
+
 
 
 
@@ -225,3 +273,9 @@ scan 'studentInfo', {COLUMNS => 'base_info:name', FILTER => "(ValueFilter(=,'sub
 - `enable <table>`：使表有效。
 - `drop <table>`：删除表。
 - `exit`：退出 HBase shell。
+
+```
+scan 'table_name', {COLUMNS => 'column_family:column_name', FILTER => "filter_string"}
+```
+
+　　大体の使い方が上記の様な、不同の検索条件によって「filter_string」書き方の差別がある。

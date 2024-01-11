@@ -47,7 +47,7 @@ get 'studentInfo', 'rk1'
 
 ![image-20231225072149913](D:\OneDrive\picture\Typora\image-20231225072149913.png)
 
-　　検査結果から見えてHBase格納方式と伝統のデータベース差別が大きい、key-value形式データを一つ一つで積んでくれ、そのお陰様で空値に対して空間を分配してあげることが必要ない、大幅にストレージ空間の使用率が上がる。あと、同じバケーションデータが一つの区域（cell）に属して、更にデータを細分して検索を効率的にする。
+　：検査結果から見えてHBase格納方式と伝統のデータベース差別が大きい、key-value形式データを一つ一つで積んでくれ、そのお陰様で空値に対して空間を分配してあげることが必要ない、大幅にストレージ空間の使用率が上がる。あと、同じバケーションデータが一つの区域（cell）に属して、更にデータを細分して検索を効率的にする。
 
 ```
 # データ改修
@@ -68,15 +68,42 @@ truncate 'lagou'
 
 #### 基本概念
 
-　　データ検索を紹介する前に幾つかHBase shell概念を説明し、詳しい内容が公式サイト([Apache HBase ™ Reference Guide](https://hbase.apache.org/book.html#thrift.filter_language))から了解できる。
+　　データ検索を紹介する前に幾つかHBase shell概念を説明し、主に演算子やキーワードの使いことに関わり、詳しい内容が公式サイト([Apache HBase ™ Reference Guide](https://hbase.apache.org/book.html#thrift.filter_language))から了解できる。
 
+**二項演算子**
 
+- AND：AND両方の濾過条件を満たしたデータを表す。
+
+- OR：OR両方少なくとも1つの濾過条件を満たしたデータを表す。
+
+**単項演算子**
+
+- SKIP：特定の行を除いて、他の濾過条件を満たしたデータを表す。
+
+**比較演算子**
+
+- <、<=、=、!=、>、>=比較演算子が使える。
+
+**比較器**
+
+- BinaryComparator - binary：データに完全一致に比較したデータを篩い分ける。
+
+- BinaryPrefixComparator - binaryprefix：データの接頭辞を比較した一致のデータを篩い分ける。
+- SubStringComparator - substring：曖昧検索する場合に使い、比較値が含まれるデータを篩い分ける。
+- RegexStringComparator - regexstring：正規表現を使って比較を行う。
+
+**濾過器**
+
+- RowFilter：RowKeyについて、該当のRowKeyに対して行を返す。
+- ValueFilter：RowKeyを除いてkey-valueのvalueにおけて、該当の値や対応のRowKeyを一緒に返す。列の範囲を指定できる。
+- SingleColumnValueFilter：ValueFilterに似て、該当の行を全て返す。
+- QualifierFilter：列名について、修飾された列の下にある全ての値を返す。
 
 ```
 scan 'table_name', {COLUMNS => 'column_family:column_name', FILTER => "FilterName (argument, argument,... , 'argument')"}
 ```
 
-　大体の検索命令の書き方が上記の様子、不同の検索条件によって「FilterName(argument)」書き方の差別がある。次に例を挙げて具体的にキーワードを紹介する。
+　　大体の検索命令の書き方が上記の様子、不同の検索条件によって「FilterName(argument)」書き方の差別があり、具体の使い方が次に例を挙げて説明する。後は、濾過器は濾過の範囲や返すデータの形を決め、具体の濾過条件を比較器で決め、例えば、「RowFilter(=,'substring:k3')」命令はRowKeyにおけて「k3」を曖昧検索して条件を満たした行の全て列値を取得するという意味です。
 
 #### データ検索
 
@@ -151,7 +178,7 @@ scan 'studentInfo', {COLUMNS => 'base_info', STARTROW => 'rk1', ENDROW => 'rk3'}
 ```
 # 1703630815431に等しいデータが表れない
 # []の意味が列族又はフィールドの検索と違う
-scan 'studentInfo',{TIMERANGE=>[1703630815262,1703630815431]}
+scan 'studentInfo',{TIMERANGE => [1703630815262,1703630815431]}
 ```
 
 ![image-20231229113000993](D:\OneDrive\picture\Typora\image-20231229113000993.png)
@@ -273,9 +300,3 @@ get 'studentInfo', 'rk2', {FILTER => "(SingleColumnValueFilter(=,'substring:a'))
 - `enable <table>`：使表有效。
 - `drop <table>`：删除表。
 - `exit`：退出 HBase shell。
-
-```
-scan 'table_name', {COLUMNS => 'column_family:column_name', FILTER => "filter_string"}
-```
-
-　　大体の使い方が上記の様な、不同の検索条件によって「filter_string」書き方の差別がある。

@@ -98,12 +98,15 @@ truncate 'lagou'
 - ValueFilter：RowKeyを除いてkey-valueのvalueにおけて、該当の値や対応のRowKeyを一緒に返す。列の範囲を指定できる。
 - SingleColumnValueFilter：ValueFilterに似て、該当の行を全て返す。
 - QualifierFilter：列名について、修飾された列の下にある全ての値を返す。
+- PrefixFilter：RowKeyについて、接頭語の比較し、該当の行を返す。
 
 ```
 scan 'table_name', {COLUMNS => 'column_family:column_name', FILTER => "FilterName (argument, argument,... , 'argument')"}
 ```
 
-　　大体の検索命令の書き方が上記の様子、不同の検索条件によって「FilterName(argument)」書き方の差別があり、具体の使い方が次に例を挙げて説明する。後は、濾過器は濾過の範囲や返すデータの形を決め、具体の濾過条件を比較器で決め、例えば、「RowFilter(=,'substring:k3')」命令はRowKeyにおけて「k3」を曖昧検索して条件を満たした行の全て列値を取得するという意味です。
+　　大体の検索命令の書き方が上記の様子、不同の検索条件によって「FilterName(argument)」書き方の差別があり、具体の使い方が次に例を挙げて説明する。ところで、命令の最外層の括弧{}を省けることができるが、本節まだ公式に沿って書くつもりです。
+
+　　後は、濾過器は濾過の範囲や返すデータの形を決め、具体の濾過条件を比較器で決める。例えば、「RowFilter(=,'substring:k3')」中に「substring:k3」の意味は「k3」で曖昧検索し、濾過器「RowFilter」を使ったと検索の範囲をRowKey列に限り、且つ、条件を満たした値に対応の全ての行を取得して表す。
 
 #### データ検索
 
@@ -199,18 +202,13 @@ scan 'studentInfo', {FILTER => "ValueFilter(!=,'binary:Jane Smith')"}
 ![image-20240104101922526](D:\OneDrive\picture\Typora\image-20240104101922526.png)
 
 ```
-# 適当の値に対応の行を表す
+# 返却列を指定されない場合に適当の値に対応の行を表す
 scan 'studentInfo', {FILTER => "SingleColumnValueFilter('base_info', 'name', =,'binary:Jane Smith')"}
+# つまり、キーワードの間に一定の優先順位がある
+scan 'studentInfo', {COLUMNS => 'base_info:name', FILTER => "SingleColumnValueFilter('base_info', 'name', =,'binary:Jane Smith')"}
 ```
 
-![image-20240108120516096](D:\OneDrive\picture\Typora\image-20240108120516096.png)
-
-```
-# 適当の値に対応の列を表す
-scan 'studentInfo', {COLUMNS => 'base_info:name', FILTER => "QualifierFilter(=,'binary:Jane Smith')"}
-```
-
-![image-20240108120624097](D:\OneDrive\picture\Typora\image-20240108120624097.png)
+![image-20240115153231372](D:\OneDrive\picture\Typora\image-20240115153231372.png)
 
 ```
 # Rowkeyについての一致検索
@@ -221,30 +219,39 @@ scan 'studentInfo',{FILTER=>"RowFilter(=,'binary:rk3')"}
 
 **曖昧検索**
 
+　　比較器「substring」に差し替えて曖昧検索の働きを果たすのもです。
+
 ```
 # 適当のフィールド値のみを表す
 scan 'studentInfo', {COLUMNS => 'base_info:name', FILTER => "ValueFilter(=,'substring:a')"}
 
-# 「!=」も使える
+# 曖昧検索に「!=」も使える
 scan 'studentInfo', {COLUMNS => 'base_info:name', FILTER => "ValueFilter(!=,'substring:a')"}
 ```
 
 ![image-20240103111905946](D:\OneDrive\picture\Typora\image-20240103111905946.png)
 
-　　ValueFilterなどキーワードを使って返しのデータを決めるだけ、本当の曖昧検索にするキーワードがsubstringです。
-
 ```
-scan 'studentInfo', {COLUMNS => 'base_info:name', FILTER => "SingleColumnValueFilter(=,'substring:a')"}
-scan 'studentInfo', {COLUMNS => 'base_info:name', FILTER => "QualifierFilter(=,'substring:grad')"}
+# 整体の行データを返却
+scan 'studentInfo', {FILTER => "SingleColumnValueFilter('base_info','name',=,'substring:a')"}
 ```
 
-![image-20240105192126498](D:\OneDrive\picture\Typora\image-20240105192126498.png)
+![image-20240115163007146](D:\OneDrive\picture\Typora\image-20240115163007146.png)
+
+```
+# RowKeyにの曖昧検索
+scan 'studentInfo',{FILTER=>"RowFilter(=,'substring:k3')"}
+```
+
+![image-20240115165613974](D:\OneDrive\picture\Typora\image-20240115165613974.png)
+
+　　PrefixFilterはRowKeyのみについて接頭語を比較して特別の濾過器です、比較器substringなどを添えない、濾過や比較の働きを兼ねる。このAPIを提供されたことから見えて、事実の業務によってRowKeyの形を設計しておき、検索を効率的にするのができる。
 
 ```
 scan 'studentInfo',{FILTER=>"PrefixFilter('rk3')"}
-
-scan 'studentInfo',{FILTER=>"RowFilter(=,'substring:k3')"}
 ```
+
+![image-20240115170919128](D:\OneDrive\picture\Typora\image-20240115170919128.png)
 
 **単一の行**
 
@@ -272,18 +279,45 @@ get 'studentInfo', 'rk1', {COLUMN => ['base_info:name', 'extra_info:math_grade']
 　　フィールド名が存在しなくてもエラーメッセージ、空値など返すのがない、何も表れないんです。あと、HBaseのストレージ結構はkey-vlue形式で格納し、一行の複数の列に同時に完全一致検索や曖昧検索も行える。
 
 ```
-get 'studentInfo', 'rk2', {FILTER => "(ValueFilter(=,'substring:a'))"}
-get 'studentInfo', 'rk2', {FILTER => "(QualifierFilter(=,'substring:a'))"}
-
-# SingleColumnValueFilterキーワードが使えない
-get 'studentInfo', 'rk2', {FILTER => "(SingleColumnValueFilter(=,'substring:a'))"}
+get 'studentInfo', 'rk2', {FILTER => "ValueFilter(=,'substring:a')"}
 ```
 
-![image-20240108104120714](D:\OneDrive\picture\Typora\image-20240108104120714.png)
+![image-20240115211127378](D:\OneDrive\picture\Typora\image-20240115211127378.png)
 
+```
+get 'studentInfo', 'rk2', {FILTER => "SingleColumnValueFilter('base_info','name', =,'substring:a')"}
+```
 
+![image-20240116150838135](D:\OneDrive\picture\Typora\image-20240116150838135.png)
 
+**数字の比較**
 
+```
+scan 'studentInfo',{FILTER=>"SingleColumnValueFilter('extra_info','math_grade', <,'binary:90')"}
+
+# 絶対大文字で書き、そしないとエラーが発生になる。
+scan 'studentInfo',{FILTER=>"(SingleColumnValueFilter('extra_info','math_grade', <,'binary:80')) AND (SingleColumnValueFilter('extra_info','math_grade', >,'binary:50'))"}
+```
+
+![image-20240116221023445](D:\OneDrive\picture\Typora\image-20240116221023445.png)
+
+```
+scan 'studentInfo',{COLUMNS => 'extra_info:math_grade', FILTER=>"ValueFilter(<,'binary:90')"}
+scan 'studentInfo',{FILTER=>"ValueFilter(<,'binary:78')"}
+```
+
+![image-20240116162226149](D:\OneDrive\picture\Typora\image-20240116162226149.png)
+
+**列名について検索**
+
+　　HBaseに列名について検索することができ、一般のデータベースがこの特性がない。ただ、指定されたフィールド値を表れる必要だと「COLUMNS => 'base_info:name'」を添えるなら、列名「name」が比較条件「binary:math_grade」の濾過結果に合わないため、結局何も返却しない。
+
+```
+scan 'studentInfo', {FILTER => "QualifierFilter(=,'binary:math_grade')"}
+scan 'studentInfo', {FILTER => "QualifierFilter(=,'substring:grad')"}
+```
+
+![image-20240116153541144](D:\OneDrive\picture\Typora\image-20240116153541144.png)
 
 以下是一些常用的 HBase shell 命令：
 

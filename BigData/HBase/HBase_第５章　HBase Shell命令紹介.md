@@ -15,13 +15,19 @@ list
 
 ![image-20231222074643934](D:\OneDrive\picture\Typora\image-20231222074643934.png)
 
-#### テーブル作成
+#### テーブル操作
 
 ```
 create 'studentInfo', 'base_info', 'extra_info'
 
 # VERSIONSイコール3意味は最近三つのバケーションデータを保留
 create 'studentInfo', {NAME => 'base_info', VERSIONS => '3'},{NAME => 'extra_info',VERSIONS => '3'}
+
+# テーブルを消除前にこのテーブルを失効にする
+disable 'studentInfo'
+drop 'studentInfo'
+
+alter 'studentInfo', 'extra_info1:English_grade'
 ```
 
 ![image-20231225065123273](D:\OneDrive\picture\Typora\image-20231225065123273.png)
@@ -104,9 +110,11 @@ truncate 'lagou'
 scan 'table_name', {COLUMNS => 'column_family:column_name', FILTER => "FilterName (argument, argument,... , 'argument')"}
 ```
 
-　　大体の検索命令の書き方が上記の様子、不同の検索条件によって「FilterName(argument)」書き方の差別があり、具体の使い方が次に例を挙げて説明する。ところで、命令の最外層の括弧{}を省けることができるが、本節まだ公式に沿って書くつもりです。
+　　大体の検索命令の書き方が上記の様子です。「COLUMNS =>'column_family:column_name'」は検査範囲を列名を指定するに通じて決める。不同の検索条件によって「FilterName(argument)」書き方の差別があり、具体の使い方が次に例を挙げて説明する。
 
-　　後は、濾過器は濾過の範囲や返すデータの形を決め、具体の濾過条件を比較器で決める。例えば、「RowFilter(=,'substring:k3')」中に「substring:k3」の意味は「k3」で曖昧検索し、濾過器「RowFilter」を使ったと検索の範囲をRowKey列に限り、且つ、条件を満たした値に対応の全ての行を取得して表す。
+　　濾過器は濾過の範囲や返すデータの形を決め、具体の濾過条件を比較器で決める。例えば、「RowFilter(=,'substring:k3')」中に「substring:k3」の意味は「k3」で曖昧検索し、濾過器「RowFilter」を使ったと検索の範囲をRowKey列に限り、且つ、条件を満たした値に対応の全ての行を取得して表す。
+
+　　命令の最外層の括弧{}を省けることができるが、本節まだ公式に沿って書くつもりです。後は、入力値が単純に文字列にするなら一重引用符を使って、FILTER後ろに函数が繋がるのは二重引用符を使う。
 
 #### データ検索
 
@@ -176,7 +184,7 @@ scan 'studentInfo', {COLUMNS => 'base_info', STARTROW => 'rk1', ENDROW => 'rk3'}
 
 **時間範囲**
 
-　　時間範囲の内にデータを検査し、範囲は前値t1以上かつ後値t2未満と「t1<=time<t2」ようです。ここの時間が実際のデータを挿入する時刻、バケーションではない。
+　　時間範囲の内にデータを検査し、範囲は前値t1以上かつ後値t2未満と「t1<=time<t2」ようです。ここの時間が実際のデータを挿入する時刻、バケーション号ではない。
 
 ```
 # 1703630815431に等しいデータが表れない
@@ -192,7 +200,7 @@ scan 'studentInfo',{TIMERANGE => [1703630815262,1703630815431]}
 # 大文字と小文字が区別することある
 scan 'studentInfo', {COLUMNS => 'base_info:name', FILTER => "ValueFilter(=,'binary:Jane Smith')"}
 
-# 列を指定しなくても検索でき、ただ検索の対象はRowKeyが含まれない
+# 列を指定しなくても検索もでき、全ての列値を対象として検索し、RowKeyが含まれない
 scan 'studentInfo', {FILTER => "ValueFilter(=,'binary:Jane Smith')"}
 
 # 指定された値を除いてデータを表す
@@ -276,15 +284,15 @@ get 'studentInfo', 'rk1', {COLUMN => ['base_info:name', 'extra_info:math_grade']
 
 ![image-20231227112034965](D:\OneDrive\picture\Typora\image-20231227112034965.png)
 
-　　フィールド名が存在しなくてもエラーメッセージ、空値など返すのがない、何も表れないんです。あと、HBaseのストレージ結構はkey-vlue形式で格納し、一行の複数の列に同時に完全一致検索や曖昧検索も行える。
-
 ```
-get 'studentInfo', 'rk2', {FILTER => "ValueFilter(=,'substring:a')"}
+# 一行の範囲について検索
+get 'studentInfo', 'rk2', {COLUMNS => 'base_info:name', FILTER => "ValueFilter(=,'substring:a')"}
 ```
 
 ![image-20240115211127378](D:\OneDrive\picture\Typora\image-20240115211127378.png)
 
 ```
+# 一行の範囲について別の書き方
 get 'studentInfo', 'rk2', {FILTER => "SingleColumnValueFilter('base_info','name', =,'substring:a')"}
 ```
 
@@ -295,22 +303,24 @@ get 'studentInfo', 'rk2', {FILTER => "SingleColumnValueFilter('base_info','name'
 ```
 scan 'studentInfo',{FILTER=>"SingleColumnValueFilter('extra_info','math_grade', <,'binary:90')"}
 
-# 絶対大文字で書き、そしないとエラーが発生になる。
+# ANDは大文字で書き、そしないとエラーが発生になる
 scan 'studentInfo',{FILTER=>"(SingleColumnValueFilter('extra_info','math_grade', <,'binary:80')) AND (SingleColumnValueFilter('extra_info','math_grade', >,'binary:50'))"}
 ```
 
 ![image-20240116221023445](D:\OneDrive\picture\Typora\image-20240116221023445.png)
 
+　　数字間の比較は本質的に文字列を比較し、大量の無用データを返却されたのを避けて返却のフィールドを確認しておくは必要です。
+
 ```
-scan 'studentInfo',{COLUMNS => 'extra_info:math_grade', FILTER=>"ValueFilter(<,'binary:90')"}
 scan 'studentInfo',{FILTER=>"ValueFilter(<,'binary:78')"}
+scan 'studentInfo',{COLUMNS => 'extra_info:history_grade', FILTER=>"ValueFilter( <,'binary:78')"}
 ```
 
-![image-20240116162226149](D:\OneDrive\picture\Typora\image-20240116162226149.png)
+![image-20240118185222401](D:\OneDrive\picture\Typora\image-20240118185222401.png)
 
 **列名について検索**
 
-　　HBaseに列名について検索することができ、一般のデータベースがこの特性がない。ただ、指定されたフィールド値を表れる必要だと「COLUMNS => 'base_info:name'」を添えるなら、列名「name」が比較条件「binary:math_grade」の濾過結果に合わないため、結局何も返却しない。
+　　HBaseに列名について検索することができ、一般のデータベースがこの特性がない。誤り「COLUMNS => 'base_info:name'」など検索範囲を添えるのは、比較条件「binary:math_grade」に合わないため何も返却しない。
 
 ```
 scan 'studentInfo', {FILTER => "QualifierFilter(=,'binary:math_grade')"}
@@ -318,6 +328,8 @@ scan 'studentInfo', {FILTER => "QualifierFilter(=,'substring:grad')"}
 ```
 
 ![image-20240116153541144](D:\OneDrive\picture\Typora\image-20240116153541144.png)
+
+
 
 以下是一些常用的 HBase shell 命令：
 

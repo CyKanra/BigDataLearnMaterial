@@ -53,7 +53,7 @@ get 'studentInfo', 'rk1'
 
 ![image-20231225072149913](D:\OneDrive\picture\Typora\image-20231225072149913.png)
 
-　：検査結果から見えてHBase格納方式と伝統のデータベース差別が大きい、key-value形式データを一つ一つで積んでくれ、そのお陰様で空値に対して空間を分配してあげることが必要ない、大幅にストレージ空間の使用率が上がる。あと、同じバケーションデータが一つの区域（cell）に属して、更にデータを細分して検索を効率的にする。
+　　検査結果から見えてHBase格納方式と伝統のデータベース差別が大きい、key-value形式データを一つ一つで積んでくれ、そのお陰様で空値に対して空間を分配してあげることが必要ない、大幅にストレージ空間の使用率が上がる。あと、同じバケーションデータが一つの区域（cell）に属して、更にデータを細分して検索を効率的にする。
 
 ```
 # データ改修
@@ -65,11 +65,13 @@ put 'studentInfo', 'rk1', 'extra_info:history_grade', '94'
 　　データ改修と添加の語句が同じ、存在したデータあれば上書きしてくれ、存在しないデータが添加になる。
 
 ```
-# データ消除
-delete 'lagou', 'rk1', 'base_info:age'
+# この行にあるフィールド値を消除
+delete 'studentInfo', 'rk1', 'base_info:age'
+# 指定の行を消除
+deleteall 'studentInfo', 'rk1'
 
 # テーブルデータ全部消除
-truncate 'lagou'
+truncate 'studentInfo'
 ```
 
 #### 基本概念
@@ -101,10 +103,11 @@ truncate 'lagou'
 **濾過器**
 
 - RowFilter：RowKeyについて、該当のRowKeyに対して行を返す。
-- ValueFilter：RowKeyを除いてkey-valueのvalueにおけて、該当の値や対応のRowKeyを一緒に返す。列の範囲を指定できる。
-- SingleColumnValueFilter：ValueFilterに似て、該当の行を全て返す。
-- QualifierFilter：列名について、修飾された列の下にある全ての値を返す。
-- PrefixFilter：RowKeyについて、接頭語の比較し、該当の行を返す。
+- ValueFilter：RowKeyを除いてkey-valueのvalueにおけて、該当の値や対応のRowKeyを一緒に返す。
+- SingleColumnValueFilter：ValueFilterに似て、該当の行の全ての値を返却する。
+- QualifierFilter：列名について、修飾された列の下にこの列の全ての値を返却する。
+- PrefixFilter：RowKeyについて、接頭語の比較し、該当の行の全ての値を返却する。
+- TimestampsFilter：指定のタイムスタンプに完全一致の行の全ての値を返却する。
 
 ```
 scan 'table_name', {COLUMNS => 'column_family:column_name', FILTER => "FilterName (argument, argument,... , 'argument')"}
@@ -161,15 +164,14 @@ scan 'studentInfo'
 scan 'studentInfo', {COLUMNS => 'base_info'}
 scan 'studentInfo', {COLUMNS => ['base_info']}
 # 具体的なフィールド値検査
-# 複数の列族又はフィールドの検索は「,」で分割して[]に包まれる、
 scan 'studentInfo', {COLUMNS => ['base_info', 'extra_info']}
+# 複数の列族又はフィールドの検索は「,」で分割して[]に包まれる
 scan 'studentInfo', {COLUMNS => ['base_info:name', 'extra_info:history_grade']}
-
-# VERSIONSバケーション番号を指定でき、例えば、全て保留できるバケーション数が3、「VERSIONS => 3」が最大のバケーション値を表す
-scan 'studentInfo', {COLUMNS => ['base_info:name', 'extra_info:history_grade'],  VERSIONS => 1}
+# 返却の条数を制限
+scan 'studentInfo', {COLUMNS => ['base_info:name', 'extra_info:history_grade'], LIMIT => 2}
 ```
 
-![image-20231229101418006](D:\OneDrive\picture\Typora\image-20231229101418006.png)
+![image-20240123163407707](D:\OneDrive\picture\Typora\image-20240123163407707.png)
 
 **RowKey範囲**
 
@@ -193,6 +195,10 @@ scan 'studentInfo',{TIMERANGE => [1703630815262,1703630815431]}
 ```
 
 ![image-20231229113000993](D:\OneDrive\picture\Typora\image-20231229113000993.png)
+
+**並べ替え**
+
+　　HBaseには並べ替えの働きがない。HBaseのストレージはkey-value形で格納し、具体の行ストレージしたりも列ストレージしたりもできない、値の文字列で並べ替えるしかないものです。従って、伝統のある順序で全てのデータを並べ替えることが有り得ない。
 
 **完成一致検索**
 
@@ -224,6 +230,14 @@ scan 'studentInfo',{FILTER=>"RowFilter(=,'binary:rk3')"}
 ```
 
 ![image-20240108143113288](D:\OneDrive\picture\Typora\image-20240108143113288.png)
+
+　　具体のタイムスタンプに等しい値を返却する。ここのタイムスタンプは値の入力時刻についてもの、一般的に一行の中に値の入力時刻が互いに違い、タイムスタンプのバージョン番号と異なるものです。
+
+```
+scan 'studentInfo',{FILTER => "TimestampsFilter[1703630815262,1703630817654]"}
+```
+
+![image-20240123163808211](D:\OneDrive\picture\Typora\image-20240123163808211.png)
 
 **曖昧検索**
 
@@ -328,21 +342,3 @@ scan 'studentInfo', {FILTER => "QualifierFilter(=,'substring:grad')"}
 ```
 
 ![image-20240116153541144](D:\OneDrive\picture\Typora\image-20240116153541144.png)
-
-
-
-以下是一些常用的 HBase shell 命令：
-
-- `create <table>, {NAME => <family>, VERSIONS => <VERSIONS>}`：创建表。
-- `list`：列出所有已创建的表。
-- `describe <table>`：显示表相关的详细信息。
-- `put <table>,<rowkey>,<family:column>,<value>`：向指定表单元添加值。
-- `get <table>,<rowkey>`：获取行的值。
-- `delete <table>,<rowkey>,<family:column>`：删除指定对象的值。
-- `deleteall <table>,<rowkey>`：删除指定行的所有元素值。
-- `scan <table>`：通过对表的扫描来获取对应的值。
-- `count <table>`：统计表中行的数量。
-- `disable <table>`：使表无效。
-- `enable <table>`：使表有效。
-- `drop <table>`：删除表。
-- `exit`：退出 HBase shell。

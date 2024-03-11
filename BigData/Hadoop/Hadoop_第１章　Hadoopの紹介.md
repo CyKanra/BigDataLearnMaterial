@@ -4,7 +4,7 @@
 
 #### Hadoopとは
 
-　　HadoopはApache基金会によって開発された分散システムの基盤となるソフトウェアフレームワークです。これはストレージシステムと計算フレームワークを組み合わせたもので、大規模データについて保存と処理の問題を解決することを目的としている。
+　　HadoopはApache基金会によって開発された分散システムの基盤となるソフトウェアフレームワークです。これはストレージシステムと計算フレームワークを組み合わせて複数のコンピュータをクラスター化にし、大規模データについて保存と処理の問題を解決することを目的としている。
 
 **ような問題を解決**
 
@@ -40,9 +40,13 @@
 
 　　Hadoopは核心の三つ部分（HDFS、MapReduce、YARN）やCommon共用部分を共に組み合わせる。
 
-- Hadoop HDFS（Hadoop Distributed File System）：高い信頼性と高いスループットを持つ分散ファイルシステムです。
+**HDFS**
 
-- Hadoop YARN（Yet Another Resource Negotiator）：任務のスケジューリングと資源管理のためのフレームワークです。
+　　Hadoop HDFS（Hadoop Distributed File System）とは、主従構造（master-slave architecture）に従ってNameNodeとDataNodeを主従節点にして高い信頼性と高いスループットを持って分散ファイルシステムです。HDFS内のファイルは、データブロック（Data Block）と呼ばれるものに分割されます。これらのブロックはクラスタ内の従節点（）に保存されます。ブロックサイズはデフォルトで128 MBで、必要に応じて設定を変更できます。
+
+![image-20240311155255355](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240311155255355.png)
+
+- Hadoop YARN（Yet Another Resource Negotiator）：任務のスケジューリング（scheduling）と資源管理のためのフレームワークです。
 
 - Hadoop MapReduce：分散されたオフラインの並行計算フレームワークです。
 - Hadoop Common：他のモジュールを支持する工具モジュール（設定、RPC、直列化、ログ操作など）

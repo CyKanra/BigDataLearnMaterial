@@ -11,7 +11,7 @@
 - 大規模データの保存：高い耐障害性を備えて複数の低コストのハードウェア（hardware）上で大量データの保存を実現する。且つデータへには高いスループット（throughput）も提供して高速化にデータを訪問することができる。
 
 
-- 資源の管理、スケジューリング：汎用の資源管理システム及びスケジューリングプシステムでで、Hadoopだけではない、上層の他のアプリケーションを一元化にされた資源管理とスケジューリングの動きを提供する。クラスタの利用率、資源の統合管理、データの共有などの面で大きな利点がもたらされました。
+- 資源の管理、スケジューリング：汎用の資源管理システム及びスケジューリングプシステムでで、Hadoopだけではない、上層の他のアプリケーションを一元化にされた資源管理とスケジューリングの効用を提供する。クラスタの利用率、資源の統合管理、データの共有などの面で大きな利点がもたらされました。
 
 - 分散型計算：複雑な大量の計算任務を多数の部分に分解し、異なる節点に割り当てて並行処理を行い、その結果を集約して最終的な出力を得るものです。その流れにクラスターの計算能力とストレージ空間を効果的に活用し、データ処理の効率と信頼性を高めることがある。
 
@@ -38,15 +38,23 @@
 
 #### Hadoopの仕組み
 
-　　Hadoopは核心の三つ部分（HDFS、MapReduce、YARN）やCommon共用部分を共に組み合わせる。
+　　Hadoopは核心の三つ部分（HDFS、MapReduce、YARN）やCommon共用部分を共に組み合わせる。以下は各部分を大体に紹介します。
 
 **HDFS**
 
-　　Hadoop HDFS（Hadoop Distributed File System）とは、主従構造（master-slave architecture）に従ってNameNodeとDataNodeを主従節点にして高い信頼性と高いスループットを持って分散ファイルシステムです。HDFS内のファイルは、データブロック（Data Block）と呼ばれるものに分割されます。これらのブロックはクラスタ内の従節点（）に保存されます。ブロックサイズはデフォルトで128 MBで、必要に応じて設定を変更できます。
+　　Hadoop HDFS（Hadoop Distributed File System）とは高い信頼性と高いスループットを持って分散ファイルシステムです。基本構造は主従結構（master-slave architecture）に従ってNameNodeとDataNodeを主従節点に分けます。NameNodeはファイルのメタデータを管理します。DataNodeは、データの実体を保存します。 HDFSにファイルが一定サイズで分割されてデータブロック（date block）としてDataNodeに保存します。
 
 ![image-20240311155255355](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240311155255355.png)
+
+- NameNode（nn）：全てのクラスタのメタデータ（Mate Data）格納の所です。例えばファイル名、ファイルの目録構造、ファイル属性（作成時間、副本数、ファイル権限）や各ファイルのブロックリストとそのブロックが存在するDataNodeなど情報を保存します。 
+- SecondaryNameNode（2nn）：NameNodeの作業を支持するために、HDFSの状態を監視する補助プログラムで、一定の時間ごとにHDFSのメタデータのスナップショット（snapshot）を取得します。 
+- DataNode（dn）：実際データブロックを格納する所です。同時にデータブロックの検証、更新などなど役も担当します。
+
+**MapReduce**
+
+![img](D:\OneDrive\picture\Typora\BigData\Hadoop\apache-hadoop-mapreduce.jpg)
 
 - Hadoop YARN（Yet Another Resource Negotiator）：任務のスケジューリング（scheduling）と資源管理のためのフレームワークです。
 
 - Hadoop MapReduce：分散されたオフラインの並行計算フレームワークです。
-- Hadoop Common：他のモジュールを支持する工具モジュール（設定、RPC、直列化、ログ操作など）
+- Hadoop Common：他のモジュールを支持する工具モジュール（設定、RPC、直列化、ログ操作など役も担当します。

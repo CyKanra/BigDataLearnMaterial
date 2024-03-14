@@ -38,7 +38,7 @@
 
 #### Hadoopの仕組み
 
-　　Hadoopは核心の三つ部分（HDFS、MapReduce、YARN）やCommon共用部分を共に組み合わせる。以下は各部分を大体に紹介します。
+　　Hadoopは核心の三つ部分（HDFS、MapReduce、YARN）やCommon共用部分を共に組み合わせる。以下は各部分の働きを大体に紹介します。
 
 **HDFS**
 
@@ -52,9 +52,15 @@
 
 **MapReduce**
 
+　　MapReduceはHadoopのデータ計算を担当する役で、複数のサーバで大規模のデータを並行に処理できるソフトウェアフレームワークです。
+
+　　MapReduceフレームワークは<キー, 値>ペアに基づいてデータの処理を行います。MapReduceの核心設定は一つのMapReduce Jobを分割Mapと併合Reduceという2種類の流れに分けて実行します。例えば、年の時間を条件としてデータを分割し、最後の処理結果が複数のファイル形式で出て条件に適当の計算結果を一つのファイルに格納されます。そのような一つのファイルが一つのMapReduce Jobの結果を代表し、あと、MapReduce Job単位にはユーザーが需要に応じて設定することもできます。
+
 ![img](D:\OneDrive\picture\Typora\BigData\Hadoop\apache-hadoop-mapreduce.jpg)
 
-- Hadoop YARN（Yet Another Resource Negotiator）：任務のスケジューリング（scheduling）と資源管理のためのフレームワークです。
+**YARN**
 
-- Hadoop MapReduce：分散されたオフラインの並行計算フレームワークです。
-- Hadoop Common：他のモジュールを支持する工具モジュール（設定、RPC、直列化、ログ操作など役も担当します。
+1. Hadoop YARN（Yet Another Resource Negotiator）：任務のスケジューリング（scheduling）と資源管理のためのフレームワークです。
+
+2. Hadoop MapReduce：分散されたオフラインの並行計算フレームワークです。
+3. Hadoop Common：他のモジュールを支持する工具モジュール（設定、RPC、直列化、ログ操作など役も担当します。

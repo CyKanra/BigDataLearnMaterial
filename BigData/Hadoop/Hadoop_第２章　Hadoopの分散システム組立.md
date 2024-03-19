@@ -33,7 +33,7 @@ systemctl status firewalld
 
 - 4つのサーバの時刻が一致に保証します。
 
-**Hadoopの分配**
+**Hadoop節点の配置**
 
 | 対象 | centos1           | centos2                      | centos3     | centos4     |
 | ---- | ----------------- | ---------------------------- | ----------- | ----------- |
@@ -41,3 +41,89 @@ systemctl status firewalld
 | YARN | NodeManager       | NodeManager、ResourceManager | NodeManager | NodeManager |
 
 ### 第２節　Hadoopの組み立て
+
+#### Hadoopインストール
+
+- 専門にソフトを格納の目録を作成
+
+```
+mkdir -p /opt/bigdata/servers
+```
+
+- rzコマンドでHadoopパッケージをその目録にアップロード
+
+![image-20240319151748247](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240319151748247.png)
+
+![image-20240319151940599](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240319151940599.png)
+
+- パッケージ解凍
+
+```
+tar -zxvf hadoop-2.9.2.tar.gz
+
+#元パッケージを消除
+rm hadoop-2.9.2.tar.gz
+```
+
+![image-20240319153716817](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240319153716817.png)
+
+- Hadoopの環境引数を設定
+
+```
+vim /etc/profile
+
+##HADOOP_HOME
+export HADOOP_HOME=/opt/bigdata/servers/hadoop-2.9.2
+export PATH=$PATH:$HADOOP_HOME/bin
+export PATH=$PATH:$HADOOP_HOME/sbin
+
+#環境引数を有効にし
+source /etc/profile
+```
+
+![image-20240319154915394](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240319154915394.png)
+
+- Hadoop検証
+
+```
+hadoop version
+```
+
+![image-20240319155128592](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240319155128592.png)
+
+**Hadoop目録説明**
+
+![image-20240319155707625](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240319155707625.png)
+
+```
+drwxr-xr-x 2 501 dialout    194 Nov 13  2018 bin
+drwxr-xr-x 3 501 dialout     20 Nov 13  2018 etc
+drwxr-xr-x 2 501 dialout    106 Nov 13  2018 include
+drwxr-xr-x 3 501 dialout     20 Nov 13  2018 lib
+drwxr-xr-x 2 501 dialout    239 Nov 13  2018 libexec
+drwxr-xr-x 3 501 dialout   4096 Nov 13  2018 sbin
+drwxr-xr-x 4 501 dialout     31 Nov 13  2018 share
+```
+
+- bin：Hadoop操作関連のコマンドがある目録。例えばhadoop、hdfsなど
+- etc：Hadoopの設定ファイル目録。例えばhdfs-site.xml、core-site.xmlなど
+- lib：Hadoopの本地依頼
+- sbin：Hadoopクラスタの起動・停止関連のスクリプトやコマンドを保存
+- share：Hadoopのjar、公式の案例jar、ドキュメントなどを含み
+
+#### Hadoopクラスタの設定
+
+Hadoopクラスタの設定 = HDFSクラスタの設定 + MapReduceクラスタの設定 + Yarnクラスタの設定 
+
+- HDFSクラスタの設定
+  - JDKのパスをHDFSに設定する（hadoop-env.sh変更）
+  - NameNodeの節点及びデータの格納目録を指定する（core-site.xml変更）
+  - SecondaryNameNodeの節点を指定する（hdfs-site.xml変更）
+  - DataNodeの従節点を指定する（etc/hadoop/slavesファイルを変更し、各節点の設定情報を1行に配置）
+- MapReduceクラスタの設定
+  - JDKのパスをMapReduceに設定する（mapred-env.sh変更）
+  - MapReduce計算フレームワークがYarnフレームワークを使用するように指定する（mapred-site.xml変更） 
+- Yarnクラスタの設定
+  - JDKのパスをYarnに設定する（yarn-env.sh変更）
+  - ResourceManagerの主節点が配置されている節点アドレスを指定する（yarn-site.xml変更）
+  - NodeManagerの節点を指定する（slavesファイルの内容により決定される）

@@ -127,3 +127,176 @@ Hadoopクラスタの設定 = HDFSクラスタの設定 + MapReduceクラスタ�
   - JDKのパスをYarnに設定する（yarn-env.sh変更）
   - ResourceManagerの主節点が配置されている節点アドレスを指定する（yarn-site.xml変更）
   - NodeManagerの節点を指定する（slavesファイルの内容により決定される）
+
+**HDFSクラスタの設定**
+
+```
+cd /opt/bigdata/servers/hadoop-2.9.2/etc/hadoop/
+```
+
+- slaves設定
+
+```
+vim slaves
+
+#従節点アドレスを書き込み
+centos1
+centos2
+centos3
+centos4
+```
+
+![image-20240320153823596](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240320153823596.png)
+
+*注意：空白や改行は一切許可されない
+
+- hadoop-env.sh設定
+
+```
+vim hadoop-env.sh
+
+#Javaアドレスを添加
+export JAVA_HOME=/opt/bigdata/servers/jdk1.8.0_231
+```
+
+![image-20240320142536348](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240320142536348.png)
+
+- core-site.xml設定
+
+```
+vim core-site.xml
+
+#NameNode節点やデータ格納のアドレスを指定
+<!-- NameNodeアドレスの指定 -->
+<property>
+	<name>fs.defaultFS</name>
+	<value>hdfs://centos1:9000</value>
+</property>
+<!-- Hadoop運行状態に生まれたデータのアドレス -->
+<property>
+	<name>hadoop.tmp.dir</name>
+	<value>/opt/bigdata/servers/hadoop-2.9.2/data/tmp</value>
+</property>
+```
+
+![image-20240320145907974](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240320145907974.png)
+
+core-site.xml資料：[hadoop.apache.org/docs/r2.9.2/hadoop-project-dist/hadoop-common/core-default.xml](https://hadoop.apache.org/docs/r2.9.2/hadoop-project-dist/hadoop-common/core-default.xml)
+
+- hdfs-site.xml設定
+
+```
+vim hdfs-site.xml
+
+#secondarynamenodeの指定
+<!-- Hadoop補助節点の設定 -->
+<property>
+	<name>dfs.namenode.secondary.http-address</name>
+	<value>centos2:50090</value>
+</property>
+<!-- 節点数 -->
+<property>
+	<name>dfs.replication</name>
+	<value>4</value>
+</property>
+```
+
+![image-20240320152915814](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240320152915814.png)
+
+hdfs-site.xml資料：[hadoop.apache.org/docs/r2.9.2/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml](https://hadoop.apache.org/docs/r2.9.2/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml)
+
+**MapReduceクラスタの設定**
+
+- mapred-env.sh設定
+
+```
+vim mapred-env.sh
+
+#Javaアドレスを添加
+export JAVA_HOME=/opt/bigdata/servers/jdk1.8.0_231
+```
+
+![image-20240320160050824](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240320160050824.png)
+
+- mapred-site.xml設定
+
+```
+#ファイル名を変更
+mv mapred-site.xml.template mapred-site.xml
+
+vim mapred-site.xml
+
+#MapReduce計算フレームワークがYarn上に運行を指定
+<!-- MRがYarn上に運行の指定 -->
+<property>
+	<name>mapreduce.framework.name</name>
+	<value>yarn</value>
+</property>
+```
+
+![image-20240320165212007](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240320165212007.png)
+
+mapred-site.xml資料：[hadoop.apache.org/docs/r2.9.2/hadoop-mapreduce-client/hadoop-mapreduce-client-core/mapred-default.xml](https://hadoop.apache.org/docs/r2.9.2/hadoop-mapreduce-client/hadoop-mapreduce-client-core/mapred-default.xml)
+
+**Yarnクラスタの設定**
+
+- yarn-env.sh設定
+
+```
+vim yarn-env.sh
+
+#Javaアドレスを添加
+export JAVA_HOME=/opt/bigdata/servers/jdk1.8.0_231
+```
+
+![image-20240320164330849](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240320164330849.png)
+
+- yarn-site.xml設定
+
+```
+vim yarn-site.xml
+
+#ResourceMnagerの節点を指定
+<!-- YARNのResourceManager節点の指定 -->
+<property>
+	<name>yarn.resourcemanager.hostname</name>
+	<value>centos2</value>
+</property>
+<!-- Reducerデータを取得の方式 -->
+<property>
+	<name>yarn.nodemanager.aux-services</name>
+	<value>mapreduce_shuffle</value>
+</property>
+```
+
+![image-20240320165403701](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240320165403701.png)
+
+yarn-site.xml資料：[hadoop.apache.org/docs/r2.9.2/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml](https://hadoop.apache.org/docs/r2.9.2/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml)
+
+　　Hadoopのインストール目録の所有者と所有者グループの情報は黙認の501 dialoutです。Hadoopクラスタを操作するユーザーは仮想マシンのrootユーザーを使用しています。そのため、情報が混乱するのを避けるために、Hadoopのインストール目録の所有者と所有者グループを一致に変更します。
+
+![image-20240320194216979](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240320194216979.png)
+
+```
+chown -R root:root /opt/bigdata/servers/hadoop-2.9.2
+```
+
+![image-20240320194141302](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240320194141302.png)
+
+**Hadoopの分配**
+
+　　Hadoop全体のファイルを他の３つのサーバに発送します。
+
+```
+cd /opt/bigdata/servers/
+
+scp -r hadoop-2.9.2/ centos2:$PWD
+scp -r hadoop-2.9.2/ centos3:$PWD
+scp -r hadoop-2.9.2/ centos4:$PWD
+```
+
+![image-20240320195349159](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240320195349159.png)
+
+![image-20240320195429368](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240320195429368.png)
+
+ 

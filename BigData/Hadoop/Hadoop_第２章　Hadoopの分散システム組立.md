@@ -299,4 +299,24 @@ scp -r hadoop-2.9.2/ centos4:$PWD
 
 ![image-20240320195429368](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240320195429368.png)
 
- 
+### 第３節　Hadoopクラスタの起動
+
+ 　　クラスタの起動方式は単節点起動とクラスタ起動の２種に分けます。単節点起動というのは一つ一つでサーバごとのHadoopサービスを起動する過程で、節点の回復、追加など使われます。クラスタ起動は全ての節点が一緒に起動、停止する場合に使われます。
+
+**単節点起動**
+
+　　**特別注意：クラスタを初めて起動する場合は、NameNode節点で初期化する必要があります。初めてではない、又はNameNodeではない場合は、NameNodeの初期化を実行するのが全然ダメです！！！**
+
+```
+hadoop namenode -format
+```
+
+![image-20240321155033806](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240321155033806.png)
+
+　　「Storage directory ～/name has been successfully formatted.」その様なメッセージが表れたら、Hadoopの初期化が成功になると言えます。二度と初期化操作を行いません。
+
+![image-20240321155210816](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240321155210816.png)
+
+　　Hadoopの初期化につれて「/opt/bigdata/servers/hadoop-2.9.2/data/tmp/dfs/name/current」下のファイルが生み出されました。データにの改修記録が一切ここに格納されます
+
+![image-20240321160224213](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240321160224213.png)

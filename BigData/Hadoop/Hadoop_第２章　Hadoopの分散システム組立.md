@@ -303,7 +303,11 @@ scp -r hadoop-2.9.2/ centos4:$PWD
 
  　　クラスタの起動方式は単節点起動とクラスタ起動の２種に分けます。単節点起動というのは一つ一つでサーバごとのHadoopサービスを起動する過程で、節点の回復、追加など使われます。クラスタ起動は全ての節点が一緒に起動、停止する場合に使われます。
 
-**単節点起動**
+#### 単節点起動
+
+**HDFS単節点起動**
+
+- NameNodeの初期化
 
 　　**特別注意：クラスタを初めて起動する場合は、NameNode節点で初期化する必要があります。初めてではない、又はNameNodeではない場合は、NameNodeの初期化を実行するのが全然ダメです！！！**
 
@@ -317,6 +321,63 @@ hadoop namenode -format
 
 ![image-20240321155210816](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240321155210816.png)
 
-　　Hadoopの初期化につれて「/opt/bigdata/servers/hadoop-2.9.2/data/tmp/dfs/name/current」下のファイルが生み出されました。データにの改修記録が一切ここに格納されます
+　　Hadoopの初期化につれて「/opt/bigdata/servers/hadoop-2.9.2/data/tmp/dfs/name/current」下のファイルが生み出されました。データにの改修記録が一切ここに格納され、例えば、ある節点が最新データかどうかと確認がこれを根拠として検査する。若しその目録のファイルが初期化されたら、Hadoopサービスが再起動できません。
 
 ![image-20240321160224213](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240321160224213.png)
+
+- HDFSのNameNode起動
+
+```
+cd /opt/bigdata/servers/hadoop-2.9.2/sbin/
+
+hadoop-daemon.sh start namenode
+
+#HDFSのプロセスを検査
+jps
+```
+
+![image-20240325153741305](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240325153741305.png)
+
+- 全ての節点がDateNode起動
+
+```
+hadoop-daemon.sh start datanode
+```
+
+![image-20240325154733876](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240325154733876.png)
+
+![image-20240325155422023](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240325155422023.png)
+
+　　プロセスを検査してHDFSの起動を確認し、又はWebにHDFS画面に登録すると詳しい情報を見えます。
+
+```
+http://192.168.31.135:50070/dfshealth.html#tab-overview
+```
+
+![image-20240325160526269](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240325160526269.png)
+
+　　「live Nodes」をリンクして各節点の状態を表せます。全ての節点が順調に運行しているなら、ここまでHadoopのHDFS部分の設定や起動が完了しました。
+
+![image-20240325160316339](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240325160316339.png)
+
+![image-20240325160356621](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240325160356621.png)
+
+**Yarn単節点起動**
+
+- centos2でresourcemanagerを起動
+
+```
+yarn-daemon.sh start resourcemanager
+```
+
+![image-20240325210729926](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240325210729926.png)
+
+- 全ての節点が以下のコマンドを実行
+
+```
+yarn-daemon.sh start nodemanager
+```
+
+![image-20240325211203100](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240325211203100.png)
+
+![image-20240325211229418](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240325211229418.png)

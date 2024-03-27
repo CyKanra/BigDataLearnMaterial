@@ -362,7 +362,7 @@ http://192.168.31.135:50070/dfshealth.html#tab-overview
 
 ![image-20240325160356621](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240325160356621.png)
 
-**Yarn単節点起動**
+**YARN単節点起動**
 
 - centos2でresourcemanagerを起動
 
@@ -381,3 +381,83 @@ yarn-daemon.sh start nodemanager
 ![image-20240325211203100](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240325211203100.png)
 
 ![image-20240325211229418](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240325211229418.png)
+
+- 節点の停止
+
+```
+hadoop-daemon.sh stop namenode
+
+hadoop-daemon.sh stop datanode
+
+yarn-daemon.sh stop resourcemanager
+
+yarn-daemon.sh stop nodemanager
+```
+
+#### クラスタ起動
+
+**HDFSクラスタ起動**
+
+　　**若し単節点起動の流れに初期化の操作を行わないなら、ここHDFSを初期化させるのが必要です。二度と初期化を実行が行けない、この点が注意します。**
+
+```
+hadoop namenode -format
+```
+
+- Hdfs起動
+
+```
+cd /opt/bigdata/servers/hadoop-2.9.2/sbin
+
+start-dfs.sh
+
+#Hdfs停止
+stop-dfs.sh
+```
+
+![image-20240327161210120](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240327161210120.png)
+
+**YARNクラスタ起動**
+
+- centos2節点にYarn起動
+
+```
+start-yarn.sh
+
+#Yarn停止
+stop-yarn.sh
+```
+
+![image-20240327162244986](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240327162244986.png)
+
+#### コマンド纏め
+
+- 別々にHDFS起動／停止
+
+```
+hadoop-daemon.sh start / stop namenode / datanode / secondarynamenode
+```
+
+- YARN起動／停止
+
+```
+yarn-daemon.sh start / stop resourcemanager / nodemanager
+```
+
+- クラスタHDFS起動／停止
+
+```
+start-dfs.sh / stop-dfs.sh
+```
+
+- クラスタYARN起動／停止
+
+```
+start-yarn.sh / stop-yarn.sh
+```
+
+### 第３節　歴史記録サーバの設定
+
+　　終わりの計算任務には歴史のログを検査することが駄目で、別のサーバを通じてログ情報を見つかるしかありません。本節はこの歴史ログサーバを設定に関する内容を紹介します。
+
+- 

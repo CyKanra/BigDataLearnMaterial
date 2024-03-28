@@ -15,11 +15,11 @@
 
 **クラスタ環境**
 
-　　Hadoopの分散システム組立の前にクラスタの環境設定が必要で、ここで大体の要点を紹介し、詳しい設定手続きが「」文章に移って了解できます。
+　　Hadoopの分散システム組立の前にクラスタの環境設定が必要で、ここで大体の要点を紹介してだけ、詳しい設定手続きが「」文章に移って了解できます。
 
 - クラスタは全て4つのサービスを備えてあり、hostファイルにIPアドレスのマッピングが図のように示します。
 
-![image-20240212154807536](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240212154807536.png)
+![image-20240328120459559](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240328120459559.png)
 
 - firewall／selinux等の動きが停止です。
 
@@ -42,7 +42,7 @@ systemctl status firewalld
 
 ### 第２節　Hadoopの組み立て
 
-#### Hadoopインストール
+#### 2.1 Hadoopインストール
 
 - 専門にソフトを格納の目録を作成
 
@@ -111,7 +111,7 @@ drwxr-xr-x 4 501 dialout     31 Nov 13  2018 share
 - sbin：Hadoopクラスタの起動・停止関連のスクリプトやコマンドを保存
 - share：Hadoopのjar、公式の案例jar、ドキュメントなどを含み
 
-#### Hadoopクラスタの設定
+#### 2.2 Hadoopクラスタの設定
 
 Hadoopクラスタの設定 = HDFSクラスタの設定 + MapReduceクラスタの設定 + Yarnクラスタの設定 
 
@@ -303,9 +303,9 @@ scp -r hadoop-2.9.2/ centos4:$PWD
 
  　　クラスタの起動方式は単節点起動とクラスタ起動の２種に分けます。単節点起動というのは一つ一つでサーバごとのHadoopサービスを起動する過程で、節点の回復、追加など使われます。クラスタ起動は全ての節点が一緒に起動、停止する場合に使われます。
 
-#### 単節点起動
+**単節点起動**
 
-**HDFS単節点起動**
+HDFS単節点起動
 
 - NameNodeの初期化
 
@@ -354,7 +354,7 @@ hadoop-daemon.sh start datanode
 http://192.168.31.135:50070/dfshealth.html#tab-overview
 ```
 
-![image-20240325160526269](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240325160526269.png)
+![image-20240328115710036](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240328115710036.png)
 
 　　「live Nodes」をリンクして各節点の状態を表せます。全ての節点が順調に運行しているなら、ここまでHadoopのHDFS部分の設定や起動が完了しました。
 
@@ -362,7 +362,7 @@ http://192.168.31.135:50070/dfshealth.html#tab-overview
 
 ![image-20240325160356621](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240325160356621.png)
 
-**YARN単節点起動**
+YARN単節点起動
 
 - centos2でresourcemanagerを起動
 
@@ -394,9 +394,9 @@ yarn-daemon.sh stop resourcemanager
 yarn-daemon.sh stop nodemanager
 ```
 
-#### クラスタ起動
+**クラスタ起動**
 
-**HDFSクラスタ起動**
+HDFSクラスタ起動
 
 　　**若し単節点起動の流れに初期化の操作を行わないなら、ここHDFSを初期化させるのが必要です。二度と初期化を実行が行けない、この点が注意します。**
 
@@ -417,7 +417,7 @@ stop-dfs.sh
 
 ![image-20240327161210120](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240327161210120.png)
 
-**YARNクラスタ起動**
+YARNクラスタ起動
 
 - centos2節点にYarn起動
 
@@ -430,7 +430,7 @@ stop-yarn.sh
 
 ![image-20240327162244986](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240327162244986.png)
 
-#### コマンド纏め
+**コマンド纏め**
 
 - 別々にHDFS起動／停止
 
@@ -456,8 +456,106 @@ start-dfs.sh / stop-dfs.sh
 start-yarn.sh / stop-yarn.sh
 ```
 
-### 第３節　歴史記録サーバの設定
+### 第４節　歴史記録検査の設定
 
 　　終わりの計算任務には歴史のログを検査することが駄目で、別のサーバを通じてログ情報を見つかるしかありません。本節はこの歴史ログサーバを設定に関する内容を紹介します。
 
-- 
+#### 4.1 歴史記録サーバの設定
+
+- mapred-site.xml設定
+
+```
+cd /opt/bigdata/servers/hadoop-2.9.2/etc/hadoop/
+
+vim mapred-site.xml
+
+#以下の内容を追加
+<!-- 歴史サーバのアドレス -->
+<property>
+	<name>mapreduce.jobhistory.address</name>
+	<value>centos1:10020</value>
+</property>
+<!-- 歴史サーバのwebアドレス -->
+<property>
+	<name>mapreduce.jobhistory.webapp.address</name>
+	<value>centos1:19888</value>
+</property>
+```
+
+![image-20240328112548333](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240328112548333.png)
+
+- 他の節点に分配し、自動的に上書きして
+
+```
+scp mapred-site.xml centos2:$PWD
+```
+
+![image-20240328115024380](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240328115024380.png)
+
+- 歴史記録サーバの起動
+
+```
+cd /opt/bigdata/servers/hadoop-2.9.2/sbin
+
+mr-jobhistory-daemon.sh start historyserver
+```
+
+![image-20240328115427835](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240328115427835.png)
+
+- JobHistoryのWebアドレス
+
+```
+http://192.168.31.135:19888/jobhistory
+```
+
+![image-20240328115849910](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240328115849910.png)
+
+　　今まで何も計算を実行しないので、表せる歴史記録がありません。
+
+#### 4.2 ログの重合
+
+　　MapReduceには一つ完全の任務を複数の小任務に分割されることがあり、そのために処理記録が各節点に散らばます。ログ重合の設定は一つの入口で完全のログ記録が検査できる結果を実現します。
+
+- yarn-site.xml設定
+
+```
+cd /opt/bigdata/servers/hadoop-2.9.2/etc/hadoop/
+
+vim yarn-site.xml
+
+#以下の内容を追加
+<!-- ログの重合機能 -->
+<property>
+	<name>yarn.log-aggregation-enable</name>
+	<value>true</value>
+</property>
+<!-- ７日間の保留 -->
+<property>
+	<name>yarn.log-aggregation.retain-seconds</name>
+	<value>604800</value>
+</property>
+```
+
+![image-20240328154516760](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240328154516760.png)
+
+- 各節点に分配
+
+```
+scp yarn-site.xml centos2:$PWD
+```
+
+![image-20240328155931531](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240328155931531.png)
+
+- 全てのサービスを再起動
+
+```
+stop-dfs.sh
+stop-yarn.sh
+mr-jobhistory-daemon.sh stop historyserver
+
+start-dfs.sh
+start-yarn.sh
+mr-jobhistory-daemon.sh start historyserver
+```
+
+### 第５節　クラスタのテスト

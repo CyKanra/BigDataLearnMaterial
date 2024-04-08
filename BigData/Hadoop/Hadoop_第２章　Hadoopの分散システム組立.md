@@ -309,7 +309,7 @@ HDFS単節点起動
 
 - NameNodeの初期化
 
-　　**特別注意：クラスタを初めて起動する場合は、NameNode節点で初期化する必要があります。初めてではない、又はNameNodeではない場合は、NameNodeの初期化を実行するのが全然ダメです！！！**
+　　**特別注意：クラスタを初めて起動する場合は、NameNode節点で初期化する必要があります。初めてではない、又はNameNodeではない場合は、NameNodeの初期化を実行するのがダメです！！！**
 
 ```
 hadoop namenode -format
@@ -559,3 +559,81 @@ mr-jobhistory-daemon.sh start historyserver
 ```
 
 ### 第５節　クラスタのテスト
+
+　　公式が提供する案例を実行してHadoopの運動状況を確認します。
+
+- 臨時のテストファイルを作成
+
+```
+cd /root/
+
+vim wordCountTest.txt
+
+#以下の内容を書き込み
+hadoop mapreduce yarn
+hdfs hadoop mapreduce
+mapreduce yarn nodemanager
+NameNode nodemanager
+ResourceManager
+ResourceManager
+```
+
+![image-20240404112313639](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240404112313639.png)
+
+- HDFS上にwcinput目録を作成
+
+```
+hdfs dfs -mkdir /wcinput
+```
+
+- wordCountTestファイルをwcinputにアップロード
+
+```
+hdfs dfs -put wordCountTest.txt /wcinput
+```
+
+![image-20240404112629229](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240404112629229.png)
+
+　　ブラウザでHDFS全ての目録結構を検査できます。
+
+![image-20240404112700343](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240404112700343.png)
+
+![image-20240404112722170](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240404112722170.png)
+
+- プログラムを実行
+
+```
+cd /opt/bigdata/servers/hadoop-2.9.2/
+
+hadoop jar share/hadoop/mapreduce/hadoop-mapreduce-examples-2.9.2.jar wordcount /wcinput /wcoutput
+```
+
+![image-20240404115239489](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240404115239489.png)
+
+- 出力結果を検査
+
+```
+hdfs dfs -cat /wcoutput/part-r-00000
+```
+
+![image-20240404115513675](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240404115513675.png)
+
+![image-20240404115640057](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240404115640057.png)
+
+- 運行して生まれたログ
+
+```
+http://192.168.31.135:19888/jobhistory
+```
+
+![image-20240404115935982](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240404115935982.png)
+
+- メタデータの変更情報を記録された
+
+```
+cd data/tmp/dfs/name/current/
+```
+
+![image-20240404120709270](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240404120709270.png)
+
+### 纏め

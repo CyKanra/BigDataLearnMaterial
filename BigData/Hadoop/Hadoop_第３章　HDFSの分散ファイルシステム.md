@@ -1,0 +1,150 @@
+# 分散大規模データ処理システム -- Hadoop-3
+
+## 第３章　HDFSの分散ファイルシステム
+
+### 第１節　HDFSの紹介
+
+　　HDFS（正式名称：Hadoop Distributed File System、Hadoop 分散ファイルシステム）はHadoopの核心組成であり、分散ストレージサービスを提供します。分散ファイルシステムは複数のコンピュータに跨り、超大規模データの保存と処理に必要な拡張性を実現します。
+
+**重要な概念**
+
+- Master/Slave構造
+
+　　HDFSは典型的なMaster/Slave構造です。HDFSクラスタは通常に1つのNameNodeと複数のDataNodeで構成されています。NameNodeはクラスタの主節点（Master Node）であり、DataNodeは従節点（Slave Node）です。
+
+- ブロックストレージ（block storage）
+
+　　HDFS内のファイルは物理的にブロック（block）で分割して保存され、ブロックのサイズは設定パラメータで規定できます。Hadoop 2.xでは既定のブロック大小は128Mです。
+
+- 命名空間（NameSpace）
+
+　　HDFSは伝統的な階層型ファイル構造を支持しています。ユーザーやプログラムなどは目録を作成し、その目録にファイルを保存できます。HDFSの命名空間の階層構造は、ほとんど既存のファイルシステムに似ています：ファイルの作成、削除、移動、名前変更が可能です。
+
+　　HDFSはクライアントに一つの抽象的な木構造の目録を提供し、アクセス形式は`hdfs://Namenode_Hostname:port/test/input`です。 例：hdfs://centos1:9000/test/input 
+
+　　NameNodeはファイルシステムの名前空間を管理し、ファイルシステム名前空間や属性の変更は全てNameNodeによって記録されます。 
+
+- NameNodeのメタデータ管理
+
+　　目録構造とファイルのブロック位置情報をメタデータと呼びます。NameNodeのメタデータは各ファイルのブロック情報（ブロックのIDとそのブロックを保持するDataNodeの情報）を記録します。
+
+- DataNodeのデータストレージ
+
+　　ファイルの各ブロックの具体的なストレージ管理はDataNodeによって行われます。一つのブロックは複数のDataNodeで保存され、DataNodeは定期的に持っているブロック情報をNameNodeに報告します。
+
+- 副本機構
+
+　　 耐障害性のために、ファイルのすべてのブロックには副本があります。各ファイルのブロック大小と副本数は設定可能です。HDFSは特定のファイルの副本数を指定でき、後で変更することもできます。副本数の既定値は3です。 
+
+- HDFSの使いに適する場合
+
+　　HDFSは一度の書き込みと複数回の読み出しに適した場面のために設計されており、ファイルのランダムな変更は支持していません（追記は支持されているが、ランダムな更新は支持されてない）。そのため、HDFSは大規模データ分析の基盤ストレージサービスに適していますが、ネットディスクなどのアプリケーションには不向きです。
+
+**HDFSの構造**
+
+![image-20240311155255355](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240311155255355.png)
+
+- NameNode(nn)：Hdfsクラスタの管理者、Master
+  - Hdfsの名前空間（NameSpace）を維持管理
+  - 副本情報を管理
+  - ファイルブロックのマッピング情報を記録
+  - クライアントの読み書き請求を処理
+- DataNode：任務の実行者、Slave
+  - NameNodeからの命令を受け、DataNodeが実際の操作を実行
+  - データブロックを保存
+  - データブロックの読み書きを担当
+- Client：クライアント
+  - ファイルをHDFSにアップロードする際、ClientはファイルをBlockに分割してアップロードを行い
+  - NameNodeと情報をやり取りし、ファイルの位置情報を取得
+  - DataNodeと情報をやり取り、ファイルの読み書きを行い
+  - Clientを通じてコマンドを使用し、HDFSの管理やアクセスを実現でき
+
+### 第２節　クライアント操作
+
+**Shellコマンド方式**
+
+- 二つの書き方、後ろの部分が同じで
+
+```
+hadoop fs コマンド
+hdfs dfs コマンド
+
+#一様の効果
+hadoop fs -cat /wcoutput/part-r-00000
+hdfs dfs -cat /wcoutput/part-r-00000
+```
+
+- 全てのコマンドを検査
+
+```
+hadoop fs
+```
+
+![image-20240409165231961](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240409165231961.png)
+
+- 常用のコマンド
+
+```
+#具体のコマンドに関連の引数を表し
+hadoop fs -help mkdir
+
+#目録の顕示
+hadoop fs -ls /
+
+#目録を作成
+hadoop fs -mkdir -p /bigdata/test
+
+#目録を消除し、非空白目録が消除されない
+hadoop fs -rmdir -p /bigdata/test
+```
+
+![image-20240410155836111](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240410155836111.png)
+
+- 本地のファイルをHDFSにアップロードし、元のファイルを消除してあり
+
+```
+vim hadoopTest.txt
+hadoop fs -moveFromLocal hadoopTest.txt /bigdata/test
+```
+
+![image-20240410161036302](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240410161036302.png)
+
+- 目標ファイルをhadoopTestの中に追加し、元のファイルが保留され
+
+```
+vim hdfsTest.txt
+hadoop fs -appendToFile hdfsTest.txt /bigdata/test/hadoopTest.txt
+
+#全てのファイルを表し
+hadoop fs -cat /bigdata/test/hadoopTest.txt
+
+#ファイルの末尾を表し
+hadoop fs -tail /bigdata/test/hadoopTest.txt
+```
+
+![image-20240410162514743](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240410162514743.png)
+
+- ファイルをコピーして本地又はHDFSに発送し、二つの書き方が一様で
+
+```
+hadoop fs -copyFromLocal hdfsTest.txt /bigdata/test/
+hadoop fs -put hdfsTest.txt /bigdata/test/
+
+hadoop fs -copyToLocal /bigdata/test/hadoopTest.txt /root
+hadoop fs -get /bigdata/test/hadoopTest.txt /root
+```
+
+![image-20240410192341567](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240410192341567.png)
+
+```
+#HDFSファイルをコピーすると別のアドレスに移動し
+hadoop fs -cp /bigdata/test/hdfsTest.txt /bigdata
+
+#HDFSファイルを消除
+hadoop fs -rm /bigdata/hdfsTest.txt
+
+#HDFSファイルの移動
+hadoop fs -mv /bigdata/test/hdfsTest.txt /bigdata
+```
+
+![image-20240410200720453](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240410200720453.png)

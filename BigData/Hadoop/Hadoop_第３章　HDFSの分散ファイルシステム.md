@@ -148,3 +148,4 @@ hadoop fs -mv /bigdata/test/hdfsTest.txt /bigdata
 ```
 
 ![image-20240410200720453](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240410200720453.png)
+

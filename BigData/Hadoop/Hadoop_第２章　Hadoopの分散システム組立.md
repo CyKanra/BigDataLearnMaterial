@@ -360,6 +360,10 @@ http://192.168.31.135:50070/dfshealth.html#tab-overview
 
 ![image-20240325160316339](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240325160316339.png)
 
+```
+http://192.168.31.135:50070/dfshealth.html#tab-datanode
+```
+
 ![image-20240325160356621](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240325160356621.png)
 
 YARN単節点起動

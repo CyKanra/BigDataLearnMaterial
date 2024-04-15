@@ -10,7 +10,7 @@
 
 - Master/Slave構造
 
-　　HDFSは典型的なMaster/Slave構造です。HDFSクラスタは通常に1つのNameNodeと複数のDataNodeで構成されています。NameNodeはクラスタの主節点（Master Node）であり、DataNodeは従節点（Slave Node）です。
+　　HDFSは典型的なMaster/Slave構造です。HaDFSクラスタは通常に1つのNameNodeと複数のDataNodeで構成されています。NameNodeはクラスタの主節点（Master Node）であり、DataNodeは従節点（Slave Node）です。
 
 - ブロックストレージ（block storage）
 
@@ -149,3 +149,40 @@ hadoop fs -mv /bigdata/test/hdfsTest.txt /bigdata
 
 ![image-20240410200720453](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240410200720453.png)
 
+```
+#直接にHDFS上にファイルを作成
+hadoop fs -touchz /bigdata/test/touchTest.txt
+```
+
+![image-20240415081436750](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240415081436750.png)
+
+　　ファイルの作成のコマンドあるけれど、HDFS上に書き込みのコマンドがありません。この点から見えてはファイルの改修などが支持することが上手くない、ただ整体の大小の変わりで、データ内容の変更に係わらずの場合が適当です。
+
+```
+#HDFSの権限管理コマンドがlinuxと同じで
+hadoop fs -chmod 666 /bigdata/test/hadoopTest.txt
+hadoop fs -chown root:root /bigdata/test/hadoopTest.txt
+hadoop fs -chgrp root /bigdata/test/hadoopTest.txt
+```
+
+![image-20240415131401790](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240415131401790.png)
+
+```
+#ファイルの大小を表し
+hadoop fs -du /bigdata/test/hadoopTest.txt
+```
+
+![image-20240415131023319](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240415131023319.png)
+
+```
+#ファイルの副本数を設定
+hadoop fs -setrep 10 /bigdata/test/hadoopTest.txt
+```
+
+![image-20240415131803181](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240415131803181.png)
+
+![image-20240415131835586](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240415131835586.png)
+
+![image-20240415131845199](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240415131845199.png)
+
+　　ここで設定されたレプリカ数はNameNodeのメタデータに記録されるだけで、実際にその数のレプリカが存在するかどうかはDataNodeの数に依存します。現在はデバイスが3台しかないため、最大で3つのレプリカしか持てません。ノード数が10台に増えた場合にのみ、レプリカ数は10に達することができます。

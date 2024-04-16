@@ -61,7 +61,7 @@
 
 ### 第２節　クライアント操作
 
-**Shellコマンド方式**
+#### 2.1 Shellコマンド方式
 
 - 二つの書き方、後ろの部分が同じで
 
@@ -185,4 +185,85 @@ hadoop fs -setrep 10 /bigdata/test/hadoopTest.txt
 
 ![image-20240415131845199](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240415131845199.png)
 
-　　ここで設定されたレプリカ数はNameNodeのメタデータに記録されるだけで、実際にその数のレプリカが存在するかどうかはDataNodeの数に依存します。現在はデバイスが3台しかないため、最大で3つのレプリカしか持てません。ノード数が10台に増えた場合にのみ、レプリカ数は10に達することができます。
+　　ここで設定された副本数はNameNodeのメタデータに記録されるだけで、実際にその数量の副本が存在するかどうかはDataNode数に依存します。現在はサーバが4台しかないため、最大で4つの副本しか持てません。節点数が10台に増えた場合にのみ、副本数は10に達することができます。
+
+#### 2.2 JAVAクライアント
+
+　　JAVAで外部からHadoopを使いにかかり内容が多すぎため、ここで一つの入門案例を挙げてだけ、どうJAVAを通してHadoopクラスタを使用することを表します。
+
+- Maveプロジェクトに下の依頼を追加
+
+```
+<dependencies>
+	<dependency>
+		<groupId>junit</groupId>
+		<artifactId>junit</artifactId>
+		<version>RELEASE</version>
+	</dependency>
+	<dependency>
+		<groupId>org.apache.logging.log4j</groupId>
+		<artifactId>log4j-core</artifactId>
+		<version>2.8.2</version>
+	</dependency>
+	<dependency>
+		<groupId>org.apache.hadoop</groupId>
+		<artifactId>hadoop-common</artifactId>
+		<version>2.9.2</version>
+	</dependency>
+	<!-- https://mvnrepository.com/artifact/org.apache.hadoop/hadoop-client-->
+	<dependency>
+		<groupId>org.apache.hadoop</groupId>
+		<artifactId>hadoop-client</artifactId>
+		<version>2.9.2</version>
+	</dependency>
+	<!-- https://mvnrepository.com/artifact/org.apache.hadoop/hadoop-hdfs -->
+	<dependency>
+		<groupId>org.apache.hadoop</groupId>
+		<artifactId>hadoop-hdfs</artifactId>
+		<version>2.9.2</version>
+	</dependency>
+</dependencies>
+```
+
+　　デバッグしやすいように、`src/main/resources`目録に`log4j.properties`ファイルを作成して完全の運行ログを出せます。
+
+```
+log4j.rootLogger=INFO, stdout
+log4j.appender.stdout=org.apache.log4j.ConsoleAppender
+log4j.appender.stdout.layout=org.apache.log4j.PatternLayout
+log4j.appender.stdout.layout.ConversionPattern=%d %p [%c] - %m%n
+log4j.appender.logfile=org.apache.log4j.FileAppender
+log4j.appender.logfile.File=target/spring.log
+log4j.appender.logfile.layout=org.apache.log4j.PatternLayout
+log4j.appender.logfile.layout.ConversionPattern=%d %p [%c] - %m%n
+```
+
+![image-20240416105022013](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240416105022013.png)
+
+- メソッドの表し
+
+```
+public class HdfsClient {
+
+        private FileSystem fs = null;
+        
+        @Before
+        public void start() throws URISyntaxException, IOException, InterruptedException{
+            Configuration configuration = new Configuration();
+            configuration.set("fs.defaultFS", "hdfs://192.168.31.135:9000");
+            fs = FileSystem.get(new URI("hdfs://192.168.31.135:9000"), configuration, "root");
+        }
+        
+        @Test
+        public void testMkdirs() throws IOException {
+            fs.copyFromLocalFile(new Path("D:/log_info.log"), new Path("/bigdata/test"));
+        }
+        
+        @After
+        public void end() throws IOException {
+            fs.close();
+        }
+}
+```
+
+　　ファイルのアップロードを実現する案例で、全ての流れを理解が難しくない、体大の観念を形成されてきたら入門については十分です。

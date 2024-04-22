@@ -270,7 +270,11 @@ public class HdfsClient {
 
 ### 第３節　HDFSの読み書き操作
 
-1. クライアントはDistributed FileSystemを通じてNameNodeにファイルのダウンロードをリクエストします。NameNodeはメタデータを照会して、ファイルブロックが存在するDataNodeのアドレスを見つけます。 
+#### 3.1 HDFS読み流れ
+
+![image-20240422090126008](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240422090126008.png)
+
+1. クライアントはNameNodeにファイルのダウンロードを請求します。NameNodeはメタデータを照会してファイルブロックが存在するDataNodeのアドレスを見つけます。 
 2. 最も近いDataNode（就近原則に基づき、その後はランダムに選択）を選び、データの読み取りをリクエストします。
 
 1. DataNodeはクライアントにデータを転送を開始します（ディスクからデータを読み込んで入力ストリームにし、Packet単位でチェックします）。

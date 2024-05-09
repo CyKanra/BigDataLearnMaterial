@@ -290,18 +290,38 @@ public class HdfsClient {
 
 　　その最短距離の副本を選択の流れが実はstep2にも終わりました。つまり、最良のブロック情報が一つだけを返却されます。もし当のブロックの取得が何か理由に失敗したら、改めてNameNodeと通信を立てて新しいメタデータを取得します。故障DataNodeも標記された次のデータ読み込みで当のDataNodeを二度と使いません。
 
+![image009](D:\OneDrive\picture\Typora\BigData\Hadoop\image009.jpg)
+
 **step5**：一つ目の128Mブロックを取得するのを完成したら、連接を閉じて二つ目の72Mブロックの取得を続けます。データ伝送の過程中にクライアントがPacket（64kB）の伝送基本単位としてブロックデータを受け、その同時にデータの検証も行っています。
 
 　　検証の最小の基本単位がChunk（512B）です。実際には、検証には4Bの検証値が含まれているため、Packetへの書き込みは516Bになります。データと検証値の比率は128:1であるため、128Mのブロックには1Mの検証ファイルが対応します。
 
-　　戻り値不完全とか、DataNode故障とか、当のDataNodeとの通信を直ぐに終えます。新しいブロックアドレスを取得して上記の流れを繰り返します。
+　　戻り値不完全とかDataNode故障とか、当のDataNodeとの通信を直ぐに停止します。新しいブロックデータを取得するために上記の流れを繰り返させます。
 
-**step6**：受けたブロックデータが先ず本地サーバにキャッシュされて、順序に永続化にして実際ファイルに書き込みます。全てのブロック取得が終わったら、FSDataInputStreamインスタンスがclose()メソッドを呼び出して通信を閉じます。
+**step6**：受けたブロックデータが先ず本地サーバにキャッシュされて、後で永続化にして実際ファイルに書き込みます。全てのブロック取得が終わったら、FSDataInputStreamインスタンスがclose()メソッドを呼び出してデータストリームを閉じて、NameNodeに通知していくことが必要ありません。
 
-![image009](D:\OneDrive\picture\Typora\BigData\Hadoop\image009.jpg)
+　　ここではHDFS読み込み流れが紹介し終わります。下記は流れのソースコードの展示で参考できます。
 
-1. クライアントはNameNodeにファイルのダウンロードを請求します。NameNodeはメタデータを照会してファイルブロックが存在するDataNodeのアドレスを見つけます。 
-2. 最も近いDataNode（就近原則に基づき、その後はランダムに選択）を選び、データの読み取りをリクエストします。
+```
+Configuration conf = new Configuration();
+FileSystem fileSystem = FileSystem.get(conf);
+Path path = new Path("/bigdata/test/hadoopTest.txt");
+if (!fileSystem.exists(path)) {
+    System.out.println("File does not exists");
+    return;
+}
+FSDataInputStream in = fileSystem.open(path);
+int numBytes = 0;
+while ((numBytes = in.read(b))> 0) {
+    System.out.prinln((char)numBytes));// code to manipulate the data which is read
+}
+in.close();
+out.close();
+fileSystem.close();
+```
 
-3. DataNodeはクライアントにデータを転送を開始します（ディスクからデータを読み込んで入力ストリームにし、Packet単位でチェックします）。
-4. クライアントはPacket単位でデータを受信し、最初にローカルキャッシュに保存し、その後目的のファイルに書き込みます。
+#### 3.2 HDFS書き込み流れ
+
+　　
+
+![file_1570080080000_20191003132120804548](D:\OneDrive\picture\Typora\BigData\Hadoop\file_1570080080000_20191003132120804548.png)

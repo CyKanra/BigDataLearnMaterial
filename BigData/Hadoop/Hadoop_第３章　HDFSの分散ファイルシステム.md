@@ -303,8 +303,9 @@ public class HdfsClient {
 　　ここではHDFS読み込み流れが紹介し終わります。下記は流れのソースコードの展示で参考できます。
 
 ```
-Configuration conf = new Configuration();
-FileSystem fileSystem = FileSystem.get(conf);
+Configuration configuration = new Configuration();
+configuration.set("fs.defaultFS", "hdfs://192.168.31.135:9000");
+FileSystem　fs = FileSystem.get(new URI("hdfs://192.168.31.135:9000"), configuration, "root");;
 Path path = new Path("/bigdata/test/hadoopTest.txt");
 if (!fileSystem.exists(path)) {
     System.out.println("File does not exists");
@@ -322,6 +323,12 @@ fileSystem.close();
 
 #### 3.2 HDFS書き込み流れ
 
-　　
+　　HDFSの書き込み流れがちょっと複雑で、ここまだ200M目標ファイルを例をしてせめて二回のアップロード流れがあると説明しています。
 
 ![file_1570080080000_20191003132120804548](D:\OneDrive\picture\Typora\BigData\Hadoop\file_1570080080000_20191003132120804548.png)
+
+step1：先ず依然クライアントがDistributed FileSystemのインスタンスを作成します。このインスタンスはNameNodeに請求を発出して目標ファイルをアップロードする可否を確認します。アップロード許可を獲得した後で200M目標ファイルを分割するとします。
+
+step2：上図の説明には不足点があり、クライアントがNameNodeに請求を発出して分割されたファイルのブロックの格納アドレス情報を獲得する矢印を付くはずです。ここ注意点あると一つのブロックには対応の格納アドレスを獲得するから副本も含まれて全てのブロックをアップロードしたまで、一つの完全のアップロード流れが終わった後で次のブロックのアップロード流れを始めて進行するんです。つまり、図の下の緑部分が一つのブロックに属するだけです。
+
+step3：FSDataOutputStreamインスタンスを作成し、読み込みのFSDataInputStreamに比較して明らかに相反の用途です。

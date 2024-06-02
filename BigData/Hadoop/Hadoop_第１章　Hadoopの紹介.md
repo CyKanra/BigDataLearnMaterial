@@ -60,7 +60,13 @@
 
 **YARN**
 
-1. Hadoop YARN（Yet Another Resource Negotiator）：任務のスケジューリング（scheduling）と資源管理のためのフレームワークです。
+　　YARNは、Hadoop V2.0から単独の部分としてあって、計算資源のスケジューリングを提供し、YARNにリソースを要求するとそのリソースを割り当てる役割を果たすフレームワークです。
 
-2. Hadoop MapReduce：分散されたオフラインの並行計算フレームワークです。
-3. Hadoop Common：他のモジュールを支持する工具モジュール（設定、RPC、直列化、ログ操作など役も担当します。
+![hadoop-yarn-architecture-1](D:\OneDrive\picture\Typora\BigData\Hadoop\hadoop-yarn-architecture-1.jpg)
+
+　　YARNは実行中のプログラムと完全に分けられており、計算の内容には触れないでYARN上でさまざまな種類の分散計算プログラムを実行することができます。例えば、MapReduce、Storm、Spark、Tezなどが含まれます。SparkやStormなどの計算フレームワークはYARN規格に適合したリソース要求の仕組みを持っていれば、YARN上で統合して実行できます。つまり、汎用的なリソーススケジューリングのフレームワークとして使われることがあります。
+
+- ResourceManager (RM): クライアントのリクエストを処理し、ApplicationMasterの起動/監視、NodeManagerの監視、リソースの割り当てとスケジューリングを行います。
+- NodeManager (NM): 各ノード上のリソースを管理し、ResourceManagerからの命令を処理し、ApplicationMasterからの命令も処理します。
+- ApplicationMaster (AM): データの分割、アプリケーションのためのリソースを要求し、内部タスクにリソースを割り当て、タスクの監視とフォールトトレランスを担当します。
+- Container: タスクの実行環境を抽象化したもので、CPU、メモリなどの多次元リソースや環境変数、起動コマンドなどタスク実行に関する情報をカプセル化します。

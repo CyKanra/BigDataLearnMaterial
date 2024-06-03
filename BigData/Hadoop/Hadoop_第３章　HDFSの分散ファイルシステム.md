@@ -298,27 +298,20 @@ public class HdfsClient {
 
 　　戻り値不完全とかDataNode故障とか、当のDataNodeとの通信を直ぐに停止します。新しいブロックデータを取得するために上記の流れを繰り返させます。
 
-**step6**：受けたブロックデータが先ず本地サーバにキャッシュされて、後で永続化にして実際ファイルに書き込みます。全てのブロック取得が終わったら、FSDataInputStreamインスタンスがclose()メソッドを呼び出してデータストリームを閉じて、NameNodeに通知していくことが必要ありません。
+**step6**：受けたブロックデータが先ず本地サーバにキャッシュされて、後で永続化にして実際ファイルに書き込みます。全てのブロック取得が終わったら、FSDataInputStreamインスタンスがclose()メソッドを呼び出してデータストリームを閉じて、NameNodeに通知していくことが必要ありません（➆）。
 
 　　ここではHDFS読み込み流れが紹介し終わります。下記は流れのソースコードの展示で参考できます。
 
 ```
-Configuration configuration = new Configuration();
-configuration.set("fs.defaultFS", "hdfs://192.168.31.135:9000");
-FileSystem　fs = FileSystem.get(new URI("hdfs://192.168.31.135:9000"), configuration, "root");;
-Path path = new Path("/bigdata/test/hadoopTest.txt");
-if (!fileSystem.exists(path)) {
-    System.out.println("File does not exists");
-    return;
+@Test
+ public void testCopyToLocalFile() throws IOException, InterruptedException,　URISyntaxException{
+	Configuration configuration = new Configuration();
+ 	FileSystem fs = FileSystem.get(new URI("hdfs://centos01:9000"), configuration, "root");
+ }
+	fs.copyToLocalFile(false, new Path("/bigdata/test/hadoopTest.txt"), new 
+	Path("D:/hadoopTest.txt"), true);
+	fs.close();
 }
-FSDataInputStream in = fileSystem.open(path);
-int numBytes = 0;
-while ((numBytes = in.read(b))> 0) {
-    System.out.prinln((char)numBytes));// code to manipulate the data which is read
-}
-in.close();
-out.close();
-fileSystem.close();
 ```
 
 #### 3.2 HDFS書き込み流れ
@@ -327,15 +320,17 @@ fileSystem.close();
 
 ![061114_0923_LearnHDFSAB2](D:\OneDrive\picture\Typora\BigData\Hadoop\061114_0923_LearnHDFSAB2.webp)
 
-**step1**：先ず依然クライアントがDistributed FileSystemのインスタンスを作成します。このインスタンスはNameNodeに請求を発出して目標ファイルをアップロードする可否を確認します。
+**step1**：先ず依然クライアントがDistributed FileSystemのインスタンスを作成します（①）。このインスタンスはNameNodeに請求を発出して目標ファイルをアップロードする可否を確認します（②）。
 
-**step2**：NameNode がユーザーのファイル書き込みRPC要求を受け取ると、様々なチェックを実行します。例えば、ユーザーが関連する作成権限を持っているか、またそのファイルが既に存在していないかなどを確認します。これらのチェックに合格した場合、新しいファイルが作成され、その操作がトランザクションログに記録されます。
+**step2**：NameNode がユーザーのファイル書き込みRPC要求を受け取ると、様々なチェックを実行します。例えば、ユーザーが関連する作成権限を持っているか、またそのファイルが既に存在しているかなどを確認します。これらのチェックに合格した場合、新しいファイルが作成され、その操作がトランザクションログに記録されます。
 
 **step3**：アップロード許可を獲得した後でFSDataOutputStreamインスタンスを作成され、200M目標ファイルを幾つかのブロックに分割すると始めます。
 
 　　書き込み流れが一括に全部ファイルを書き込むことではありません。1番目のブロックを分割されて出てから、対応の格納アドレスと副本アドレスを獲得して順序に各DataNodeにデータを発送したまでは、一つの連続、完全のアップロード流れです。前の終わりだ初めて、次の2番目のブロックのアップロード流れを始めて進行します。
 
 　　その対応の格納アドレスを獲得する働きをDataStreamerから担当します（⑤）。読み込みと同じでブロックがパケット（packet）に分割される形式でData Queue隊列に格納されて目標のDataNodeに発送して行きます（④）。
+
+　　副本の選択は読み込みと類似の放置策略があります。最初の副本はできるだけデータを書き込む節点に配置し、二番目の副本は最初のレプリカとは異なるラック（rack）にある節点に配置し、三番目の副本は二番目の副本と同じラックに配置します
 
 **step4**：データを書き込む前に先ずクライアントのFSDataOutputStreamが各節点が正常かどうか確認します。クライアントは最前の1番目の節点に請求を発送し、クライアントに返却を受信すると1番目の節点の存在を確認しました。その後1番目の節点が2番目の節点に請求を発送します。正常に受信したの2番目の節点がクライアントに応答してあげます。最後の節点まで確認したと一つの完全の通信チャンネルが建てました。その通信チャンネルがData Pipelineとも呼ばれます（⑥）。
 
@@ -362,4 +357,20 @@ fileSystem.close();
 **step7**：一番目のブロックをアップロードが終了だと、DataStreamが再びNameNodeに請求を発出します。上記の操作を繰り返して全てのブロックを各節点に書き込む後は、クライアントclose()メソッドを呼び出してIOストリームを閉じます（⑪）。
 
 **step8**：NameNodeに知らせて書き込み流れが完成しました。NameNodeが今回のログとメタデータなどに最新の情報を書き込んで現在のデータを更新します。
+
+　　ここではHDFS書き込み流れが紹介し終わります。下記は流れのソースコードの展示で参考できます。
+
+```
+@Test
+public void testUploadPacket() throws IOException {
+    final FileInputStream in = new FileInputStream(new File("D:/hadoopTest.txt"));
+    final FSDataOutputStream out = fs.create(new Path("/bigdata/test/hadoopTest.txt"), new Progressable() {
+        public void progress() {
+            System.out.println("&");
+        }
+    });
+    IOUtils.copyBytes(in, out, configuration);
+    fs.close();
+}
+```
 

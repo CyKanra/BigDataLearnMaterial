@@ -362,14 +362,14 @@ public class HdfsClient {
 
 ```
 @Test
-public void testUploadPacket() throws IOException {
-    final FileInputStream in = new FileInputStream(new File("D:/hadoopTest.txt"));
-    final FSDataOutputStream out = fs.create(new Path("/bigdata/test/hadoopTest.txt"), new Progressable() {
-        public void progress() {
-            System.out.println("&");
-        }
-    });
-    IOUtils.copyBytes(in, out, configuration);
+public void putFileToHDFS() throws IOException, InterruptedException, URISyntaxException {
+    Configuration configuration = new Configuration();
+    FileSystem fs = FileSystem.get(new URI("hdfs://centos01:9000"), configuration, "root");
+    FileInputStream fis = new FileInputStream(new File("D:/hadoopTest.txt"));
+    FSDataOutputStream fos = fs.create(new Path("/bigdata/test/hadoopTest.txt"));
+    IOUtils.copyBytes(fis, fos, configuration);
+    IOUtils.closeStream(fos);
+    IOUtils.closeStream(fis);
     fs.close();
 }
 ```

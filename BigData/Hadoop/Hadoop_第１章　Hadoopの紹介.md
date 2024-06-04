@@ -66,7 +66,15 @@
 
 　　YARNは実行中のプログラムと完全に分けられており、計算の内容には触れないでYARN上でさまざまな種類の分散計算プログラムを実行することができます。例えば、MapReduce、Storm、Spark、Tezなどが含まれます。SparkやStormなどの計算フレームワークはYARN規格に適合したリソース要求の仕組みを持っていれば、YARN上で統合して実行できます。つまり、汎用的なリソーススケジューリングのフレームワークとして使われることがあります。
 
-- ResourceManager (RM): クライアントのリクエストを処理し、ApplicationMasterの起動/監視、NodeManagerの監視、リソースの割り当てとスケジューリングを行います。
-- NodeManager (NM): 各ノード上のリソースを管理し、ResourceManagerからの命令を処理し、ApplicationMasterからの命令も処理します。
-- ApplicationMaster (AM): データの分割、アプリケーションのためのリソースを要求し、内部タスクにリソースを割り当て、タスクの監視とフォールトトレランスを担当します。
-- Container: タスクの実行環境を抽象化したもので、CPU、メモリなどの多次元リソースや環境変数、起動コマンドなどタスク実行に関する情報をカプセル化します。
+![HadoopYarn](D:\OneDrive\picture\Typora\BigData\Hadoop\HadoopYarn-1717450127465-2.jpg)
+
+- ResourceManager (RM): クライアントのリクエストを処理し、ApplicationMasterの起動/監視、NodeManagerの監視、資源の割り当てとスケジューリングを行います。
+- NodeManager (NM): 各節点上のリソースを管理し、ResourceManagerからの命令を処理し、ApplicationMasterからの命令も処理します。
+- ApplicationMaster (AM): データの分割、アプリケーションのための資源を要求し、内部タスクに資源を割り当て、タスクの監視とフォールトトレランス（fault tolerance）を担当します。
+- Container: タスクの実行環境を抽象化したもので、CPU、メモリなどの多次元資源や環境変数、起動コマンドなどタスク実行に関する情報をカプセル化します。
+
+**Common**
+
+　　Commonは、他のHadoopモジュールに基礎施設と常用のプログラム及びライブラリの集合を提供します。主にシステム設定ツールであるConfiguration、遠隔手続き呼び出し（Remote Procedure Call/RPC）、データの直列化、及びHadoop内部に抽象されるファイルシステム（FileSystem）などが含まれ、一般的なハードウェア上でクラウドコンピューティング環境を構築するための基本的なサービスを提供し、そのプラットフォーム上で動作するソフトウェア開発に必要なAPIを提供します。
+
+簡単に言うと、Hadoop CommonはHadoopエコシステム全体の運用を支える基本的なコンポーネントであり、HDFS、MapReduce、およびYARNなどの他のモジュールが正常に動作し、協調して動作できるようにします。これは、Hadoopの分散計算およびストレージ機能を実現するために不可欠な部分です。

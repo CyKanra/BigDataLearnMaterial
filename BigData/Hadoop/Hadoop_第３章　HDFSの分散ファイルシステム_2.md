@@ -36,4 +36,15 @@ NameNode部分:
 
 1. 最初NameNodeを初期化にして新たなFsimageとEditsファイルを作成します。その以外起動するときNameNodeが最新のFsimageとEditsファイルをメモリに読み込みます。
 2. クライアントから変更操作をメタデータに実行するアクセスを受信します。
-3. NameNodeが変更操作しか記録しません。全ての変更記録が先ずEditsファイルに追加していきます。一定の記録を積み重ねるまで、元に編集されているedits_inprogress_001ファイルがedits_001に保存されて何の改修でも進行しません。その代わりにedits_inprogress_002ファイルが処理中のEditsファイルとします。
+3. NameNodeが変更操作しか記録しません。全ての変更記録が先ずEditsファイルに追加していきます。一定の記録を積み重ねるまでに、元の編集されているedits_inprogress_001ファイルがedits_001に保存されて何の改修でも進行しません。その代わりにedits_inprogress_002ファイルが処理中のEditsファイルとします。一回のログローテート「log rotation」がそういう過程です。
+
+　　NameNodeの役割が大体上記のように、纏めてのはクライアントのリクエストを受信、トランザクション記録、editsのログローテート3点であります。
+
+Secondary NameNode部分：
+
+1. NameNodeにログローテートさせる最初の触発点がSecondary NameNodeからCheckPoint（検査点）をする必要かどうかをNameNodeに問います。
+2. 許可を得ったSecondary NameNodeが実行CheckPointのリクエストを送信します。
+3. 指令をもらったNameNodeがEditsのログローテートを進行します。
+
+
+

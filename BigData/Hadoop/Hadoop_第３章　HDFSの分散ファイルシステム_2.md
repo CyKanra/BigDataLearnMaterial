@@ -43,8 +43,13 @@ NameNode部分:
 Secondary NameNode部分：
 
 1. NameNodeにログローテートさせる最初の触発点がSecondary NameNodeからCheckPoint（検査点）をする必要かどうかをNameNodeに問います。
-2. 許可を得ったSecondary NameNodeが実行CheckPointのリクエストを送信します。
+2. 許可を得ったSecondary NameNodeがCheckPoint実行のリクエストを送信します。
 3. 指令をもらったNameNodeがEditsのログローテートを進行します。
+4. 最新の保存されたedits_inprogress_001とFsimageがSecondary NameNodeにダウンロードされます。
+5. edits_inprogress_001とFsimageがメモリに読み込まれます。
+6. edits_inprogress_001とFsimageがSecondary NameNodeのメモリに合併して新しいFsimageファイルを生み出します。一応Fsimage.chkpointと呼びます。
+7. Fsimage.chkpointファイルをコピーしてNameNodeへ転送します。
+8. Fsimage.chkpoint名称を改名して元のFsimageファイルを上書きます。
 
-
+　　一つ完全のメタデータの維持流れが大体上記のようで、処理方法は難しくなくてかなり巧妙だと思います。第二次ログローテートするときにedits_inprogress_002を取ってだけ、Secondary NameNodeにの現存のFsimageを合併していいんです。後は、以上の処理流れが100パーセントデータの損失が保証できません。例えば、編集中のEditsファイルがログローテートしてないなのに、メモリにの状態で、NameNode停止してその部分のデータが失ってあります。
 

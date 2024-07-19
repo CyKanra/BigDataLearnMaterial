@@ -59,6 +59,60 @@ Secondary NameNode部分：
 
 ![image-20240715160949061](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240715160949061.png)
 
-- 最大数の結尾数`~225`のFsimageファイルが最新です。そのに対して結尾数`~225`のEditsがログローテートしたの中に最新のです。
-- `edits_inprogress_~00256`のが編集中Editsファイルです。
-- 複数のEdits内容が一括にFsimageに書き込んであります。
+- 最大数の結尾数`~225`のFsimageが最新で、そのに対して結尾数~225のEditsがログローテートしたの中に最新のです。
+- edits_inprogress_~00256名称ファイルが編集中のEditsで、まだFsimageに併せていません。
+- 複数のEdits内容が一括にFsimageに書き込みも可能です。
+- seen_txidには最新のEditsファイルの結尾数256を記録し、毎回起動してseen_txidの数値を通ってedits_inprogressファイルが紛失していないか確認します。
+- VERSIONにはクラスタの情報を記録します。
+
+![image-20240719162558943](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240719162558943.png)
+
+![image-20240719162620471](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240719162620471.png)
+
+　　全体クラスタを初期化にする時に初期化に捉えられる節点にnamespaceIDとclusterID一意な標識を与えました。ただ配置ファイルに節点アドレスを追加すると、その標識不一意なのでクラスタがこの節点を採用しません。もし一つの節点を抜いて改めて初期化にするなら、今回はnamespaceIDとclusterIDの値が刷新されて3つ節点のクラスタになります。
+
+- Secondary NameNodeにはedits_inprogressとseen_txid二つのを除いて大体のメタデータがあり、VERSIONの情報もちろん異なります。
+
+![image-20240716144751072](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240716144751072.png)
+
+- 他の普通の節点がメタデータがありません。
+
+![image-20240716145030989](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240716145030989.png)
+
+### 4.4　FsimageとEditsファイルの内容
+
+　　FsimageとEditsが全て序列化にされるため普通の編集ツールで照査できない。公式が方法を提供して反序列化にして可検査のxmlファイルになれます。
+
+公式URL：[Apache Hadoop 2.9.2 – Offline Image Viewer Guide](https://hadoop.apache.org/docs/r2.9.2/hadoop-project-dist/hadoop-hdfs/HdfsImageViewer.html)
+
+oiv：Offline Image Viewer View a Hadoop fsimage INPUTFILE using the specified PROCESSOR,saving the results in OUTPUTFILE.
+
+```
+cd /opt/bigdata/servers/hadoop-2.9.2/data/tmp/dfs/name/current
+
+#Hadoopサービス停止状態でも実行でき
+hdfs oiv -p XML -i fsimage_0000000000000000253 -o /root/fsimageTest.xml
+```
+
+![image-20240716160142940](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240716160142940.png)
+
+![image-20240716160202722](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240716160202722.png)
+
+　　でもlinux持参の格式化にxmlファイルを検査するツールがありません。ここxmlstarletツールインストールを先行します。
+
+```
+sudo yum install xmlstarlet
+
+#格式化にしてのファイルを出力
+xmlstarlet fo fsimageTest.xml > fsioutput.xml
+```
+
+![image-20240717164837672](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240717164837672.png)
+
+```
+cat fsioutput.xml
+```
+
+![image-20240718162326360](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240718162326360.png)
+
+　　最初`<version>`と`<NameSection>`部分が本節点のバージョン情報とNameNode

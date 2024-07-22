@@ -32,7 +32,7 @@
 
 ![OIP1](D:\OneDrive\picture\Typora\BigData\Hadoop\OIP1.jpg)
 
-NameNode部分:
+NameNode部する
 
 1. 最初NameNodeを初期化にして新たなFsimageとEditsファイルを作成します。その以外起動するときNameNodeが最新のFsimageとEditsファイルをメモリに読み込みます。
 2. クライアントから変更操作をメタデータに実行するアクセスを受信します。
@@ -42,14 +42,14 @@ NameNode部分:
 
 Secondary NameNode部分：
 
-1. NameNodeにログローテートさせる最初の触発点がSecondary NameNodeからCheckPoint（検査点）をする必要かどうかをNameNodeに問います。
-2. 許可を得ったSecondary NameNodeがCheckPoint実行のリクエストを送信します。
-3. 指令をもらったNameNodeがEditsのログローテートを進行します。
-4. 最新の保存されたedits_inprogress_001とFsimageがSecondary NameNodeにダウンロードされます。
-5. edits_inprogress_001とFsimageがメモリに読み込まれます。
-6. edits_inprogress_001とFsimageがSecondary NameNodeのメモリに合併して新しいFsimageファイルを生み出します。一応Fsimage.chkpointと呼びます。
-7. Fsimage.chkpointファイルをコピーしてNameNodeへ転送します。
-8. Fsimage.chkpoint名称を改名して元のFsimageファイルを上書きます。
+1. NameNodeにログローテートさせる最初の触発点がSecondary NameNodeからCheckPoint（検査点）をする必要かどうかをNameNodeに問う。
+2. 許可を得ったSecondary NameNodeがCheckPoint実行のリクエストを送信する。
+3. 指令をもらったNameNodeがEditsのログローテートを進行する。
+4. 最新の保存されたedits_inprogress_001とFsimageがSecondary NameNodeにダウンロードされる。
+5. edits_inprogress_001とFsimageがメモリに読み込まれる。
+6. edits_inprogress_001とFsimageがSecondary NameNodeのメモリに合併して新しいFsimageファイルを生み出します。一応Fsimage.chkpointと呼ぶ。
+7. Fsimage.chkpointファイルをコピーしてNameNodeへ転送する。
+8. Fsimage.chkpoint名称を改名して元のFsimageファイルを上書く。
 
 　　一つ完全のメタデータの維持流れが大体上記のようで、処理方法は難しくなくてかなり巧妙だと思います。第二次ログローテートするときにedits_inprogress_002を取ってだけ、Secondary NameNodeにの現存のFsimageを合併していいんです。後は、以上の処理流れが100パーセントデータの損失が保証できません。例えば、編集中のEditsファイルがログローテートしてないなのに、メモリにの状態で、NameNode停止してその部分のデータが失ってあります。
 
@@ -60,22 +60,30 @@ Secondary NameNode部分：
 ![image-20240715160949061](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240715160949061.png)
 
 - 最大数の結尾数`~225`のFsimageが最新で、そのに対して結尾数~225のEditsがログローテートしたの中に最新のです。
-- edits_inprogress_~00256名称ファイルが編集中のEditsで、まだFsimageに併せていません。
+- edits_inprogress_~00256名称ファイルが編集中のEditsで、まだFsimageに併せてない。
 - 複数のEdits内容が一括にFsimageに書き込みも可能です。
-- seen_txidには最新のEditsファイルの結尾数256を記録し、毎回起動してseen_txidの数値を通ってedits_inprogressファイルが紛失していないか確認します。
-- VERSIONにはクラスタの情報を記録します。
+- seen_txidには最新のEditsファイルの結尾数256を記録し、毎回起動してseen_txidの数値を通ってedits_inprogressファイルが紛失していないか確認する。
+- VERSIONにはクラスタの情報を記録する。
+
+```
+cat VERSION
+```
 
 ![image-20240719162558943](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240719162558943.png)
 
 ![image-20240719162620471](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240719162620471.png)
 
-　　全体クラスタを初期化にする時に初期化に捉えられる節点にnamespaceIDとclusterID一意な標識を与えました。ただ配置ファイルに節点アドレスを追加すると、その標識不一意なのでクラスタがこの節点を採用しません。もし一つの節点を抜いて改めて初期化にするなら、今回はnamespaceIDとclusterIDの値が刷新されて3つ節点のクラスタになります。
+　　**namespaceID**：HDFSファイルシステム内のすべてのファイルと目録を含む抽象的な概念です。一般的に一つのクラスタが一意のnamespaceID存在するだけ。複数の名前空間が必要な場合、Hadoopは連合HDFS（Federated HDFS）という働きを提供し、複数の独立したルートディレクトリ（root directory）に対して名前空間のを持てます。前提がhdfs-site.xml改修が必要です。
 
-- Secondary NameNodeにはedits_inprogressとseen_txid二つのを除いて大体のメタデータがあり、VERSIONの情報もちろん異なります。
+　　**clusterID**：HDFSクラスター全体を一意に識別するためのUUID（汎用一意識別子）です。HDFSクラスタが初期化されるときに生成され、クラスタ全体で一貫して使用されます。この節点が本クラスタに所属するかどうか判断します。namespaceIDを複数にできるけれど、clusterIDにはいけません。ただclusterIDを追加したり、新しいclusterID再生したりできます。前者が新しい節点を添加し、後者が初期化にします。
+
+　　**blockpoolID**：HDFSのブロックプール（Block Pool）を一意に識別するための識別子です。ブロックプールは、HDFS内のデータブロックの集合であり、ファイルシステム内のデータを物理的に保存する単位です。`BP-1480344265-192.168.31.135-1711003810821`識別子がNameNodeのIPアドレスと`cTime`初期化の時刻を含みます。
+
+- Secondary NameNodeにはedits_inprogressとseen_txid二つのを除いて大体同じです。
 
 ![image-20240716144751072](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240716144751072.png)
 
-- 他の普通の節点がメタデータがありません。
+- 他の普通の節点がメタデータがない。
 
 ![image-20240716145030989](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240716145030989.png)
 
@@ -98,7 +106,18 @@ hdfs oiv -p XML -i fsimage_0000000000000000253 -o /root/fsimageTest.xml
 
 ![image-20240716160202722](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240716160202722.png)
 
-　　でもlinux持参の格式化にxmlファイルを検査するツールがありません。ここxmlstarletツールインストールを先行します。
+```
+#自分コンピューターにダウンロード、多分Downloads目録にいる
+sz fsimageTest.xml
+```
+
+![image-20240722165614346](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240722165614346.png)
+
+　　もしNotepad++にXMLツールがあり、Ctrl+Alt+Shift+Bを押してXMLファイルを格式化にできます。
+
+![image-20240722170324363](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240722170324363.png)
+
+でもlinux持参の格式化にxmlファイルを検査するツールがありません。ここxmlstarletツールインストールを先行します。
 
 ```
 sudo yum install xmlstarlet

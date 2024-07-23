@@ -117,12 +117,27 @@ sz fsimageTest.xml
 
 ![image-20240722170324363](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240722170324363.png)
 
-でもlinux持参の格式化にxmlファイルを検査するツールがありません。ここxmlstarletツールインストールを先行します。
+　　べつの方法がサーバーにxmlstarletツールを介して検査もできます。
 
 ```
 sudo yum install xmlstarlet
+```
 
-#格式化にしてのファイルを出力
+　　もし上のコマンド失敗したら、多分Centos7のyumの鏡像（mirror）ダウンロードアドレスが失効になりました。`/etc/yum.repos.d/CentOS-Base.repo`このファイルを新しい鏡像アドレスに変更し、依頼をダウンロードしていい。
+
+解決の方法：[緊急対応！CentOS 7 サポート終了後のyumエラー解消法 #ShellScript - Qiita](https://qiita.com/owayo/items/81c843fb11d27b217433)
+
+```
+#既存依頼を消除
+sudo yum clean all
+
+#依頼をダウンロード
+sudo yum makecache
+```
+
+　　次は新しいファイルに転換して格式化にします。
+
+```
 xmlstarlet fo fsimageTest.xml > fsioutput.xml
 ```
 

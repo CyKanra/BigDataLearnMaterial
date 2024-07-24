@@ -639,5 +639,3 @@ cd data/tmp/dfs/name/current/
 ```
 
 ![image-20240404120709270](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240404120709270.png)
-
-### 纏め

@@ -135,7 +135,7 @@ sudo yum clean all
 sudo yum makecache
 ```
 
-　　次は新しいファイルに転換して格式化にします。
+　　次は新しいファイルに転換して格式化にしました。
 
 ```
 xmlstarlet fo fsimageTest.xml > fsioutput.xml
@@ -147,6 +147,24 @@ xmlstarlet fo fsimageTest.xml > fsioutput.xml
 cat fsioutput.xml
 ```
 
-![image-20240718162326360](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240718162326360.png)
+![image-20240724144054058](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240724144054058-1721799762791-1.png)
 
-　　最初`<version>`と`<NameSection>`部分が本節点のバージョン情報とNameNode
+　　頭部`<version>`と`<NameSection>`包まれた部分が別にHDFSファイルシステムのバージョン情報と名前空間の特定のメタデータ情報です。中に`＜txid＞`対しての数字が`seen_txid`と同じです。
+
+　　次は重点で、`<INodeSection>`包まれたの記録は所為のメタデータです。`<inode>`に一回変更操作含まれます。
+
+`<id>`：`<inode>`の一意の識別子です。
+
+`<type>`：`<inode>`の種類、DIRECTORY`またはFILEなどの値を含む。
+
+`<name>`：これは目録やファイルの名前です。
+
+`<mtime>`：当の目録内に何でも変更に限り、この最後の変更の時刻をミリ秒単位で示す。「modification time」の略です
+
+`<permission>`：ファイル又は目録の権限。
+
+　　下図が
+
+![image-20240724162039062](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240724162039062.png)
+
+![image-20240724162208628](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240724162208628.png)

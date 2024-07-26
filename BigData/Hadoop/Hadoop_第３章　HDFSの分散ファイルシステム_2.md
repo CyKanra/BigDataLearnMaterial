@@ -93,7 +93,11 @@ cat VERSION
 
 公式URL：[Apache Hadoop 2.9.2 – Offline Image Viewer Guide](https://hadoop.apache.org/docs/r2.9.2/hadoop-project-dist/hadoop-hdfs/HdfsImageViewer.html)
 
-oiv：Offline Image Viewer View a Hadoop fsimage INPUTFILE using the specified PROCESSOR,saving the results in OUTPUTFILE.
+####  Fsimage内容
+
+　　oiv：Offline Image Viewer View a Hadoop fsimage INPUTFILE using the specified PROCESSOR,saving the results in OUTPUTFILE.
+
+　　oivコマンドを使ってFsimageファイルを反序列化にできます。
 
 ```
 cd /opt/bigdata/servers/hadoop-2.9.2/data/tmp/dfs/name/current
@@ -163,8 +167,44 @@ cat fsioutput.xml
 
 `<permission>`：ファイル又は目録の権限。
 
-　　下図が
+　　下図がtypeがFILE類型の`<inode>`で、比べてして余分な`<block>`がhsfsTest.txtファイルに対してのブロック情報です。ブロックの一意の識別子、変更バージョン、ブロック大小など含まれ、ただブロックの所在の節点情報がありません。クラスタ起動の時に、安全模式（safemode）に入ってあり、各節点がNameNodeに自分持ちのブロック情報を報告します。後で一定の間隔でその流れを繰り返してあり、ブロックの格納情報が最新に保証します。
 
 ![image-20240724162039062](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240724162039062.png)
 
 ![image-20240724162208628](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240724162208628.png)
+
+　　`<INodeSection>`内の各`<inode>`が実行の前後順で並べます。実際の目録結構を表すメタデータがファイルの後ろにいます。
+
+![image-20240725143913777](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240725143913777-1721886036645-1.png)
+
+####  Edits内容
+
+　　もっと説明しやすいため、ここ幾つか案例を用意しております
+
+```
+hdfs dfs -mkdir /EditsTest
+
+hdfs dfs -put /root/wordCountTest.txt /EditsTest
+```
+
+![image-20240725152414091](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240725152414091.png)
+
+　　oev：Offline edits viewer Parse a Hadoop edits log file INPUT_FILE and save results in OUTPUT_FILE
+
+　　oevコマンドを使ってEditsファイルを反序列化にできます。
+
+```
+cd /opt/bigdata/servers/hadoop-2.9.2/data/tmp/dfs/name/current
+
+hdfs oev -p XML -i edits_inprogress_0000000000000000289 -o /root/edits.xml
+```
+
+![image-20240725152646505](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240725152646505.png)
+
+```
+cat edits.xml
+```
+
+![image-20240725152927720](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240725152927720-1721889000826-3.png)
+
+　　先二次の操作が図に見えます。大部分のタグの意味が分かりやすい、ここ`<OPCODE>`を取り出して説明してきます。一番目の`<OPCODE>`が`OP_MKDIR`を書くと、ちょうどmkdirコマンドに対応して目録を作成の流れを表示します。二番目の`OP_ADD`が新しいファイルを作成の意味です。

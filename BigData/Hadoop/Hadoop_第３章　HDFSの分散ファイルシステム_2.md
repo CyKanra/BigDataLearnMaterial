@@ -51,7 +51,7 @@ Secondary NameNode部分：
 7. Fsimage.chkpointファイルをコピーしてNameNodeへ転送する。
 8. Fsimage.chkpoint名称を改名して元のFsimageファイルを上書く。
 
-　　一つ完全のメタデータの維持流れが大体上記のようで、処理方法は難しくなくてかなり巧妙だと思います。第二次ログローテートするときにedits_inprogress_002を取ってだけ、Secondary NameNodeにの現存のFsimageを合併していいんです。後は、以上の処理流れが100パーセントデータの損失が保証できません。例えば、編集中のEditsファイルがログローテートしてないなのに、メモリにの状態で、NameNode停止してその部分のデータが失ってあります。
+　　一つ完全のメタデータの維持流れが大体上記のようで、処理方法は難しくなくてかなり巧妙だと思います。第二次ログローテートするときにedits_inprogress_002を取ってだけ、Secondary NameNodeにの現存Fsimageを合併していいんです。
 
 ### 4.3　FsimageとEditsファイルの分析
 
@@ -207,4 +207,40 @@ cat edits.xml
 
 ![image-20240725152927720](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240725152927720-1721889000826-3.png)
 
-　　先二次の操作が図に見えます。大部分のタグの意味が分かりやすい、ここ`<OPCODE>`を取り出して説明してきます。一番目の`<OPCODE>`が`OP_MKDIR`を書くと、ちょうどmkdirコマンドに対応して目録を作成の流れを表示します。二番目の`OP_ADD`が新しいファイルを作成の意味です。
+　　先二次の操作が図に見えます。大部分のタグの意味が分かりやすい、ここ`<OPCODE>`を取り出して説明してきます。一番目の`<OPCODE>`が`OP_MKDIR`を書くと、ちょうどmkdirコマンドに対応して目録を作成の流れを表示します。二番目の`OP_ADD`が新しいファイルを添加の意味です。
+
+### 4.5　checkpoint周期
+
+　　checkpoint周期の設定が可変です。公式で右側目録の最低にhdfs-default.xmlに設定できます。対応の引数が`dfs.namenode.checkpoint.period`です。実際にhdfs-default.xml存在しないんで、ただデフォルト設定を説明しやすいために名付ける。本当に役立つのがhdfs-site.xmlです。
+
+![image-20240726160229611](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240726160229611.png)
+
+　　以下の幾つか別の設定を参照できます。
+
+```
+<!-- 一時定時 -->
+<property>
+	<name>dfs.namenode.checkpoint.period</name>
+	<value>3600</value>
+</property>
+<!-- 一分で変更操作を検査し、1百万次までcheckpoint信号を送信 -->
+<property>
+	<name>dfs.namenode.checkpoint.txns</name>
+	<value>1000000</value>
+</property>
+<property>
+	<name>dfs.namenode.checkpoint.check.period</name>
+	<value>60</value>
+</property>
+```
+
+### 4.6　NameNodeの故障処理
+
+　　NameNodeが故障すると、HDFSクラスターは正常に動作できなくなります。これは、HDFSファイルシステムのメタデータがNameNodeによって管理・維持され、クライアントとやり取りする必要があるためです。メタデータが破損または喪失すると、NameNodeが正常に動作できなくなり、結果としてHDFSファイルシステムが正常にサービスを提供できなくなります。
+
+では、メタデータが喪失・破損した場合、どうやって復旧すればよいのでしょうか？
+
+1. セカンダリNameNode（2NN）のメタデータをNameNode（NN）のノードにコピーする
+   - この方法では、メタデータの一部が失われる可能性があります。
+2. HDFSのHA（高可用性）クラスターを構築し、NameNodeの単一障害点の問題を解決する
+   - Zookeeperを利用してHAを実現し、1つのActiveなNameNodeと1つのStandbyなNameNodeを設定します。

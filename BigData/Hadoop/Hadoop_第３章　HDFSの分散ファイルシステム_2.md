@@ -16,7 +16,7 @@
 
 　　ディスクに格納したFsimageとメモリに最新の変更記録Editsに結びつけて完全のメタデータファイルに組み合わせてなります。
 
-#### NNと2NN
+## 第５節　NNと2NN
 
 　　メタデータ管理にはNameNodeやSecondaryNameNodeから共同に担当します。
 
@@ -28,7 +28,7 @@
 
 　　本節はどうメタデータの処理をめぐってNNや2NNの運行仕組み、メタデータの構造を紹介してきます。
 
-### 4.2　メタデータ管理の流れ
+### 5.1　メタデータ管理の流れ
 
 ![OIP1](D:\OneDrive\picture\Typora\BigData\Hadoop\OIP1.jpg)
 
@@ -53,7 +53,7 @@ Secondary NameNode部分：
 
 　　一つ完全のメタデータの維持流れが大体上記のようで、処理方法は難しくなくてかなり巧妙だと思います。第二次ログローテートするときにedits_inprogress_002を取ってだけ、Secondary NameNodeにの現存Fsimageを合併していいんです。
 
-### 4.3　FsimageとEditsファイルの分析
+### 5.2　FsimageとEditsファイルの分析
 
 　　NameNodeサーバー`/opt/bigdata/servers/hadoop-2.9.2/data/tmp/dfs/name/current`目録にFsimageとEditsメタデータがあります。
 
@@ -87,7 +87,7 @@ cat VERSION
 
 ![image-20240716145030989](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240716145030989.png)
 
-### 4.4　FsimageとEditsファイルの内容
+### 5.3　FsimageとEditsファイルの内容
 
 　　FsimageとEditsが全て序列化にされるため普通の編集ツールで照査できない。公式が方法を提供して反序列化にして可検査のxmlファイルになれます。
 
@@ -209,7 +209,7 @@ cat edits.xml
 
 　　先二次の操作が図に見えます。大部分のタグの意味が分かりやすい、ここ`<OPCODE>`を取り出して説明してきます。一番目の`<OPCODE>`が`OP_MKDIR`を書くと、ちょうどmkdirコマンドに対応して目録を作成の流れを表示します。二番目の`OP_ADD`が新しいファイルを添加の意味です。
 
-### 4.5　checkpoint周期
+## 第６節　checkpoint周期
 
 　　checkpoint周期の設定が可変です。公式で右側目録の最低にhdfs-default.xmlに設定できます。対応の引数が`dfs.namenode.checkpoint.period`です。実際にhdfs-default.xml存在しないんで、ただデフォルト設定を説明しやすいために名付ける。本当に役立つのがhdfs-site.xmlです。
 
@@ -234,13 +234,69 @@ cat edits.xml
 </property>
 ```
 
-### 4.6　NameNodeの故障処理
+## 第７節　NameNodeの故障処理
 
-　　NameNodeが故障すると、HDFSクラスターは正常に動作できなくなります。これは、HDFSファイルシステムのメタデータがNameNodeによって管理・維持され、クライアントとやり取りする必要があるためです。メタデータが破損または喪失すると、NameNodeが正常に動作できなくなり、結果としてHDFSファイルシステムが正常にサービスを提供できなくなります。
+　HDFSファイルシステムのメタデータがNameNodeによって管理、維持され、クライアントと対話する必要があるためです。NameNodeが故障するとメタデータが破損または喪失になるなら、NameNodeが正常に運行できません。
 
-では、メタデータが喪失・破損した場合、どうやって復旧すればよいのでしょうか？
+1. SecondaryNameNode（2NN）のメタデータをNameNode（NN）の節点にコピーする。この方法では、edits_inprogressメタデータが存在しないため一部が失われる可能性がる。
+2. HDFSのHA（高可用性）クラスタを構築し、NameNodeの単一障害点の問題を解決する。Zookeeperを利用してHAを実現し、1つ活躍NameNodeと1つ控えNameNodeを設定する。
 
-1. セカンダリNameNode（2NN）のメタデータをNameNode（NN）のノードにコピーする
-   - この方法では、メタデータの一部が失われる可能性があります。
-2. HDFSのHA（高可用性）クラスターを構築し、NameNodeの単一障害点の問題を解決する
-   - Zookeeperを利用してHAを実現し、1つのActiveなNameNodeと1つのStandbyなNameNodeを設定します。
+## 第８節　Hadoopの限定額、安全模式や書庫ファイル
+
+**HDFSの限定額を配置**
+
+　HDFSファイルの限定額設定では、特定のディレクトリにアップロードされるファイル数量やファイルの総容量を制限してきます。
+
+- 数量限定
+
+```
+#ディレクトリ下に1つに限定
+hdfs dfsadmin -setQuota 1 /EditsTest
+
+#ファイルをアップロード
+hdfs dfs -put /root/fsioutput.xml /EditsTest
+```
+
+![image-20240729153746234](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240729153746234.png)
+
+- 総容量限定
+
+```
+#4k容量限定
+hdfs dfsadmin -setSpaceQuota 4k /EditsTest
+
+#ファイルをアップロード
+hdfs dfs -put /root/fsioutput.xml /EditsTest
+```
+
+![image-20240729155039117](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240729155039117.png)
+
+```
+#限定条件を検査
+hdfs dfs -count -q -h /EditsTest
+
+#数量限定を解除
+hdfs dfsadmin -clrQuota /EditsTest
+
+#総容量限定を解除
+hdfs dfsadmin -clrSpaceQuota /EditsTest
+```
+
+![image-20240729160306602](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240729160306602.png)
+
+**HDFS安全模式**
+
+　安全模式は、HDFSの特殊な状態です。この状態では、ファイルシステムはデータの読み取りリクエストのみを受け付け、削除や変更などの変更リクエストは受け付けません。NameNodeが起動する際、HDFSはまず安全模式に入ります。DataNodeが起動すると、利用可能な節点がブロックの状態をNameNodeに報告します。システム全体が安全基準に達するとHDFSは自動的に安全模式を解除します。
+
+　HDFSが安全模式にファイルブロックは複製操作を行いません。安全模式が解除されるとNameNodeはDataNodeにブロックの複製品を添加するように指示します。
+
+```
+#手動的に安全模式入って
+hdfs dfsadmin -safemode [enter|leave|get]
+```
+
+**書庫ファイル**
+
+　主にHDFSクラスターで大量の小さなファイルが存在する問題を解決するためです。大量の小さなファイルはNameNodeのメモリを占有するため、HDFSにとって大量の小さなファイルを保存することはNameNodeのメモリ資源の浪費を引き起こします。
+
+　Hadoopアーカイブファイル（HARファイル）は、より効率的なファイルアーカイブツールです。HARファイルは、一連のファイルをアーカイブツールを使用して作成され、NameNodeのメモリ使用量を削減しながら、ファイルへの透明なアクセスを可能にします。簡単に言うと、HARファイルはNameNodeにとっては1つのファイルとして扱われ、メモリの浪費を減らしながらも、実際の操作では個々のファイルとして処理されます。

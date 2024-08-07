@@ -301,4 +301,62 @@ hdfs dfsadmin -safemode [enter|leave|get]
 
 　Hadoopアーカイブファイル（HARファイル）は、より効率的なファイルアーカイブツールです。HARファイルは一連のファイルを合併して作成されます。NameNodeのメモリ使用量を削減しながら、実際の操作でNameNodeにとっては単独の小さなファイルとして処理します。
 
+```
+#アーカイブを要するディレクトリを作成
+hdfs dfs -mkdir /archiveTest
+
+#ファイルをアップロード
+hdfs dfs -put /root/fsimageTest.xml /archiveTest
+hdfs dfs -put /root/hadoopTest.txt /archiveTest
+hdfs dfs -put /root/wordCountTest.txt /archiveTest
+```
+
+![image-20240731102540902](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240731102540902.png)
+
+　全てのファイルを一つinput.har名称ファイルにアーカイブします。出力結果が/archiveOutputに置きます。
+
+```
+hadoop archive -archiveName input.har –p /archiveTest /archiveOutput
+```
+
+![image-20240731113250581](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240731113250581.png)
+
+![image-20240731113350041](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240731113350041.png)
+
+```
+hdfs dfs -lsr /archiveOutput
+```
+
+![image-20240731114156986](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240731114156986.png)
+
+　アーカイブ流れが大体その下図のように、アーカイブされたファイルが別の結構で保存します。
+
 ![97084776](D:\OneDrive\picture\Typora\BigData\Hadoop\97084776.png)
+
+- _SUCCESS：アーカイブ成功した標識
+- index：アーカイブ内のファイルやディレクトリのメタデータを保存する索引ファイル
+- _masterindex：アーカイブ内のブロック索引情報を保存するファイル
+- part-0：アーカイブされた実データを保存するファイル
+
+```
+#原始のデータを検査
+hadoop fs -ls har:///archiveOutput/input.har
+```
+
+![image-20240731141401899](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240731141401899.png)
+
+```
+#ここディレクトリ作成が必要で
+hdfs dfs -mkdir /archive
+
+#アーカイブを解除し、指定ディレクトリに還元
+hadoop fs -cp har:///archiveOutput/input.har/* /archive
+
+hdfs dfs -ls /archive
+```
+
+![image-20240731141317982](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240731141317982.png)
+
+![image-20240731141555763](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240731141555763.png)
+
+　　NameNodeにとっては、まだ3つファイルに一つ一つ対応することが変わってない、荷造りにして格納するだけです。

@@ -1,6 +1,6 @@
 # 分散大規模データ処理システム -- Hadoop-2
 
-## 第２章　Hadoopの分散システム組み立て
+# 第２章　Hadoopの分散システム組み立て
 
 **バージョン情報**
 
@@ -11,11 +11,11 @@
   - 単一節点模擬分布モード：単一節点、マルチスレッド（multi-thread）でクラスタの効果を模擬するが、本番環境ではこの方法は使用されない。
   - **完全分散モード**：複数節点を持ち、実際の生産環境のモードと一致しています。本番環境ではこのモードが推奨される。
 
-### 第１節　環境準備
+## 第１節　環境準備
 
 **クラスタ環境**
 
-　　Hadoopの分散システムを構築する前に、クラスタの環境設定が必要です。ここでは主要なポイントを紹介し、詳しい設定手続きが「」文章で確認できます。
+　Hadoopの分散システムを構築する前に、クラスタの環境設定が必要です。ここでは主要なポイントを紹介し、詳しい設定手続きが「」文章で確認できます。
 
 - クラスタは全て4つのサービスが含まれ、hostファイルにIPアドレスのマッピングが図のように示す。
 
@@ -40,17 +40,17 @@ systemctl status firewalld
 | HDFS | NameNode,DataNode | SecondaryNameNode,DataNode   | DataNode    | DataNode    |
 | YARN | NodeManager       | NodeManager、ResourceManager | NodeManager | NodeManager |
 
-### 第２節　Hadoopの組み立て
+## 第２節　Hadoopの組み立て
 
-#### 2.1 Hadoopインストール
+### 2.1 Hadoopインストール
 
-- ソフトを格納の目録を作成
+- ソフトを格納のディレクトリを作成
 
 ```
 mkdir -p /opt/bigdata/servers
 ```
 
-- rzコマンドでHadoopパッケージをその目録にアップロード
+- rzコマンドでHadoopパッケージをそのディレクトリにアップロード
 
 ![image-20240319151748247](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240319151748247.png)
 
@@ -91,7 +91,7 @@ hadoop version
 
 ![image-20240319155128592](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240319155128592.png)
 
-**Hadoop目録説明**
+**Hadoopディレクトリ説明**
 
 ![image-20240319155707625](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240319155707625.png)
 
@@ -105,27 +105,27 @@ drwxr-xr-x 3 501 dialout   4096 Nov 13  2018 sbin
 drwxr-xr-x 4 501 dialout     31 Nov 13  2018 share
 ```
 
-- bin：Hadoop操作関連のコマンドがある目録。例えばhadoop、hdfsなど
-- etc：Hadoopの設定ファイル目録。例えばhdfs-site.xml、core-site.xmlなど
+- bin：Hadoop操作関連のコマンドがあるディレクトリ。例えばhadoop、hdfsなど
+- etc：Hadoopの設定ファイルのディレクトリ。例えばhdfs-site.xml、core-site.xmlなど
 - lib：Hadoopの本地依頼
 - sbin：Hadoopクラスタの起動・停止関連のスクリプトやコマンドを保存
 - share：Hadoopのjar、公式の案例jar、ドキュメントなどを含み
 
-#### 2.2 Hadoopクラスタの設定
+### 2.2 Hadoopクラスタの設定
 
 Hadoopクラスタの設定 = HDFSクラスタの設定 + MapReduceクラスタの設定 + Yarnクラスタの設定 
 
 - HDFSクラスタの設定
-  - JDKのパスをHDFSに設定する（hadoop-env.sh変更）
-  - NameNodeの節点及びデータの格納目録を指定する（core-site.xml変更）
-  - SecondaryNameNodeの節点を指定する（hdfs-site.xml変更）
+  - JDKのパスをHDFSに設定する（hadoop-env.shを変更）
+  - NameNodeの節点及びデータの格納ディレクトリを指定する（core-site.xmlを変更）
+  - SecondaryNameNodeの節点を指定する（hdfs-site.xmlを変更）
   - DataNodeの従節点を指定する（etc/hadoop/slavesファイルを変更し、各節点の設定情報を1行に配置）
 - MapReduceクラスタの設定
-  - JDKのパスをMapReduceに設定する（mapred-env.sh変更）
-  - MapReduce計算フレームワークがYarnフレームワークを使用するように指定する（mapred-site.xml変更） 
+  - JDKのパスをMapReduceに設定する（mapred-env.shを変更）
+  - MapReduce計算フレームワークがYarnフレームワークを使用するように指定する（mapred-site.xmlを変更） 
 - Yarnクラスタの設定
-  - JDKのパスをYarnに設定する（yarn-env.sh変更）
-  - ResourceManagerの主節点が配置されている節点アドレスを指定する（yarn-site.xml変更）
+  - JDKのパスをYarnに設定する（yarn-env.shを変更）
+  - ResourceManagerの主節点が配置されている節点アドレスを指定する（yarn-site.xmlを変更）
   - NodeManagerの節点を指定する（slavesファイルの内容により決定される）
 
 **HDFSクラスタの設定**
@@ -148,7 +148,7 @@ centos4
 
 ![image-20240320153823596](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240320153823596.png)
 
-*注意：空白や改行は一切許可されない
+> *注意：空白や改行は一切許可されない
 
 - hadoop-env.sh設定
 
@@ -181,7 +181,7 @@ vim core-site.xml
 
 ![image-20240320145907974](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240320145907974.png)
 
-core-site.xml資料：[hadoop.apache.org/docs/r2.9.2/hadoop-project-dist/hadoop-common/core-default.xml](https://hadoop.apache.org/docs/r2.9.2/hadoop-project-dist/hadoop-common/core-default.xml)
+　core-site.xml資料：[hadoop.apache.org/docs/r2.9.2/hadoop-project-dist/hadoop-common/core-default.xml](https://hadoop.apache.org/docs/r2.9.2/hadoop-project-dist/hadoop-common/core-default.xml)
 
 - hdfs-site.xml設定
 
@@ -203,7 +203,7 @@ vim hdfs-site.xml
 
 ![image-20240320152915814](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240320152915814.png)
 
-hdfs-site.xml資料：[hadoop.apache.org/docs/r2.9.2/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml](https://hadoop.apache.org/docs/r2.9.2/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml)
+　hdfs-site.xml資料：[hadoop.apache.org/docs/r2.9.2/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml](https://hadoop.apache.org/docs/r2.9.2/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml)
 
 **MapReduceクラスタの設定**
 
@@ -271,9 +271,9 @@ vim yarn-site.xml
 
 ![image-20240320165403701](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240320165403701.png)
 
-yarn-site.xml資料：[hadoop.apache.org/docs/r2.9.2/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml](https://hadoop.apache.org/docs/r2.9.2/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml)
+　yarn-site.xml資料：[hadoop.apache.org/docs/r2.9.2/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml](https://hadoop.apache.org/docs/r2.9.2/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml)
 
-　　Hadoopのインストール目録の所有者と所有者グループの情報は黙認の501 dialoutです。Hadoopクラスタを操作するユーザーは仮想マシンのrootユーザーを使用しています。そのため、情報が混乱するのを避けるために、Hadoopのインストール目録の所有者と所有者グループを一致に変更します。
+　Hadoopのインストールディレクトリの所有者と所有者グループの情報はデフォルトで501 dialoutです。Hadoopクラスタを操作するユーザーは仮想マシンのrootユーザーを使用しています。そのため、情報が混乱するのを避けるために、Hadoopのインストールディレクトリの所有者と所有者グループを一致させるように変更します。
 
 ![image-20240320194216979](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240320194216979.png)
 
@@ -285,7 +285,7 @@ chown -R root:root /opt/bigdata/servers/hadoop-2.9.2
 
 **Hadoopの分配**
 
-　　Hadoop全体のファイルを他の３つのサーバに発送します。
+　Hadoop全体のファイルを他の３つのサーバに発送します。
 
 ```
 cd /opt/bigdata/servers/
@@ -299,17 +299,17 @@ scp -r hadoop-2.9.2/ centos4:$PWD
 
 ![image-20240320195429368](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240320195429368.png)
 
-### 第３節　Hadoopクラスタの起動
+## 第３節　Hadoopクラスタの起動
 
- 　　クラスタの起動方式は単節点起動とクラスタ起動の２種に分けます。単節点起動というのは一つ一つでサーバごとのHadoopサービスを起動する過程で、節点の回復、追加など使われます。クラスタ起動は全ての節点が一緒に起動、停止する場合に使われます。
+ 　クラスタの起動方式は、単一節点起動やクラスタ起動の2種類に分けます。単一節点起動とは、サーバごとにHadoopサービスを一つ一つ起動する方法で、節点の回復や追加など使用されます。クラスタ起動は、全ての節点が一斉に起動、停止する場合に使用されます。
 
-**単節点起動**
+#### 3.1　単節点起動
 
-HDFS単節点起動
+**HDFS単節点起動**
 
 - NameNodeの初期化
 
-　　**特別注意：クラスタを初めて起動する場合は、NameNode節点で初期化する必要があります。初めてではない、又はNameNodeではない場合は、NameNodeの初期化を実行するのがダメです！！！**
+　**特別注意：クラスタを初めて起動する場合は、NameNode節点で初期化する必要があります。初めてではない、又はNameNode以外では、NameNodeの初期化を実行してはいけません！！！**
 
 ```
 hadoop namenode -format
@@ -317,11 +317,11 @@ hadoop namenode -format
 
 ![image-20240321155033806](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240321155033806.png)
 
-　　「Storage directory ～/name has been successfully formatted.」その様なメッセージが表れたら、Hadoopの初期化が成功になると言えます。二度と初期化操作を行いません。
+　`Storage directory ～/name has been successfully formatted.`その様なメッセージが表れたら、Hadoopの初期化が成功になると言えます。二度と初期化操作が行けません。
 
 ![image-20240321155210816](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240321155210816.png)
 
-　　Hadoopの初期化につれて「/opt/bigdata/servers/hadoop-2.9.2/data/tmp/dfs/name/current」下のファイルが生み出されました。データにの改修記録が一切ここに格納され、例えば、ある節点が最新データかどうかと確認がこれを根拠として検査する。若しその目録のファイルが初期化されたら、Hadoopサービスが再起動できません。
+　Hadoopの初期化につ`/opt/bigdata/servers/hadoop-2.9.2/data/tmp/dfs/name/current`下のファイルが生成されます。データにの改修記録が全てここに格納されます。もし二度と初期化されたら、メタデータが損壊された、Hadoopサービスが起動できません。
 
 ![image-20240321160224213](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240321160224213.png)
 
@@ -348,7 +348,7 @@ hadoop-daemon.sh start datanode
 
 ![image-20240325155422023](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240325155422023.png)
 
-　　プロセスを検査してHDFSの起動を確認し、又はWebにHDFS画面に登録すると詳しい情報を見えます。
+　プロセスを検査してHDFSの起動を確認でき、又はWebにHDFS画面に登録すると詳しい情報を見えます。
 
 ```
 http://192.168.31.135:50070/dfshealth.html#tab-overview
@@ -356,7 +356,7 @@ http://192.168.31.135:50070/dfshealth.html#tab-overview
 
 ![image-20240328115710036](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240328115710036.png)
 
-　　「live Nodes」をリンクして各節点の状態を表せます。全ての節点が順調に運行しているなら、ここまでHadoopのHDFS部分の設定や起動が完了しました。
+　`live Nodes`をリンクして各節点の状態を表せます。全ての節点が順調に運行しているなら、ここまでHadoopのHDFS部分の設定や起動が完了しました。
 
 ![image-20240325160316339](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240325160316339.png)
 
@@ -366,7 +366,7 @@ http://192.168.31.135:50070/dfshealth.html#tab-datanode
 
 ![image-20240325160356621](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240325160356621.png)
 
-YARN単節点起動
+**YARN単節点起動**
 
 - centos2でresourcemanagerを起動
 
@@ -398,9 +398,9 @@ yarn-daemon.sh stop resourcemanager
 yarn-daemon.sh stop nodemanager
 ```
 
-**クラスタ起動**
+#### 3.2　クラスタ起動
 
-HDFSクラスタ起動
+**HDFSクラスタ起動**
 
 　　**若し単節点起動の流れに初期化の操作を行わないなら、ここHDFSを初期化させるのが必要です。二度と初期化を実行が行けない、この点が注意します。**
 
@@ -421,7 +421,7 @@ stop-dfs.sh
 
 ![image-20240327161210120](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240327161210120.png)
 
-YARNクラスタ起動
+**YARNクラスタ起動**
 
 - centos2節点にYarn起動
 
@@ -460,11 +460,11 @@ start-dfs.sh / stop-dfs.sh
 start-yarn.sh / stop-yarn.sh
 ```
 
-### 第４節　歴史記録検査の設定
+## 第４節　歴史サーバを配置
 
-　　終わりの計算任務には歴史のログを検査することが駄目で、別のサーバを通じてログ情報を見つかるしかありません。本節はこの歴史ログサーバを設定に関する内容を紹介します。
+　計算任務のログを検査できません。本節は歴史ログサーバを設定すると歴史ログを検査できるを紹介します。
 
-#### 4.1 歴史記録サーバの設定
+### 4.1 歴史記録サーバの設定
 
 - mapred-site.xml設定
 
@@ -488,7 +488,7 @@ vim mapred-site.xml
 
 ![image-20240328112548333](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240328112548333.png)
 
-- 他の節点に分配し、自動的に上書きして
+- 他の節点に分配し、自動的に上書き
 
 ```
 scp mapred-site.xml centos2:$PWD
@@ -496,7 +496,7 @@ scp mapred-site.xml centos2:$PWD
 
 ![image-20240328115024380](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240328115024380.png)
 
-- 歴史記録サーバの起動
+- 歴史ログサーバの起動
 
 ```
 cd /opt/bigdata/servers/hadoop-2.9.2/sbin
@@ -514,11 +514,11 @@ http://192.168.31.135:19888/jobhistory
 
 ![image-20240328115849910](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240328115849910.png)
 
-　　今まで何も計算を実行しないので、表せる歴史記録がありません。
+　　今まで何も計算を実行しないので、歴史記録がありません。
 
-#### 4.2 ログの重合
+### 4.2 ログの合併
 
-　　MapReduceには一つ完全の任務を複数の小任務に分割されることがあり、そのために処理記録が各節点に散らばます。ログ重合の設定は一つの入口で完全のログ記録が検査できる結果を実現します。
+　MapReduceには一つ完全の任務を複数の小任務に分割される方式で実行します。そのために処理記録が各節点に散らばります。ログ合併の設定は一つの入口を通じて完全のログ記録が検査できます。
 
 - yarn-site.xml設定
 
@@ -562,9 +562,9 @@ start-yarn.sh
 mr-jobhistory-daemon.sh start historyserver
 ```
 
-### 第５節　クラスタのテスト
+## 第５節　クラスタのテスト
 
-　　公式が提供する案例を実行してHadoopの運動状況を確認します。
+　公式が提供した案例を実行してHadoopの運動状況を確認します。
 
 - 臨時のテストファイルを作成
 
@@ -584,7 +584,7 @@ ResourceManager
 
 ![image-20240404112313639](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240404112313639.png)
 
-- HDFS上にwcinput目録を作成
+- HDFS上にwcinputディレクトリを作成
 
 ```
 hdfs dfs -mkdir /wcinput
@@ -598,7 +598,7 @@ hdfs dfs -put wordCountTest.txt /wcinput
 
 ![image-20240404112629229](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240404112629229.png)
 
-　　ブラウザでHDFS全ての目録結構を検査できます。
+　ブラウザでHDFS全てのディレクトリ結構を検査できます。
 
 ![image-20240404112700343](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240404112700343.png)
 
@@ -624,7 +624,7 @@ hdfs dfs -cat /wcoutput/part-r-00000
 
 ![image-20240404115640057](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240404115640057.png)
 
-- 運行して生まれたログ
+- ログの検査
 
 ```
 http://192.168.31.135:19888/jobhistory
@@ -639,3 +639,15 @@ cd data/tmp/dfs/name/current/
 ```
 
 ![image-20240404120709270](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240404120709270.png)
+
+## 纏め
+
+　本章は、Hadoopの分散システムを組み立て流れや基本の操作を紹介しました。
+
+- Hadoopの分散システムの配置内容
+- Hadoopの起動方式、一度の初期化限りを要する
+- ログ検査やログの合併を実現する
+- wordCount案例の展示
+
+　次の章では、Hadoopの三大構成要素の一つ、最も核心であるHDFS（Hadoop Distributed File System）を紹介します。
+

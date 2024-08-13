@@ -28,13 +28,13 @@ MapReduceのタスクプロセスは、2つの処理段階に分かれていま�
 
 　WordCountコードは三つの部分に分けます。
 
-- Map：分割流れに対応して、Mapper親クラスを継承するのTokenizerMapperクラスで、親クラスのmapメソッドを書き直す必要です。Map階段のロジックがここに書きます。
+- Map：分割流れに対応して、Mapper親クラスを継承して親クラスのmapメソッドを書き直す必要です。Map階段のロジックがここに書きます。
 
 ![image-20240808160200736](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240808160200736.png)
 
 　入力値keyが一行文字のオフセット（offset）で、一応行数を理解していい、特に使われていません。入力値valueが一行文字の内容です。大体のロジックは、mapメソッドが一行文字を受けて空白で仕切りを行います。複数の単語を含める結果値`itr`がループ処理をします。一つ一つ単語を「<単語, 出現回数=1>」形式で`context`に書き込みます。
 
-- Reduce：統合流れに対して、Reducer親クラスを継承するのIntSumReducerクラスで、親クラスのreduceメソッドを書き直す必要です。Reduce階段のロジックがここに書きます。
+- Reduce：統合流れに対して、Reducer親クラスを継承して親クラスのreduceメソッドを書き直す必要です。Reduce階段のロジックがここに書きます。
 
 ![image-20240811153315099](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240811153315099.png)
 
@@ -44,5 +44,135 @@ MapReduceのタスクプロセスは、2つの処理段階に分かれていま�
 
 ![image-20240812165236008](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240812165236008-1723449222995-1.png)
 
-　MapReduceコーディングには、開発者がMap分割とReduce統合のロジックを関心するだけで、具体的な計算手順を考慮する必要ありません。
+　MapReduceコーディングには、開発者がMap分割とReduce統合のロジックを関心するだけでいい、どうやって分割、統合内容を考慮する必要ありません。
 
+## 第３節　手動的にWordCount機能を実現
+
+　MapReduceコーディングの規範に従って自らWordCount機能のプログラムを実現します。IdeaツールでMavenプログラムを新作してMapper，Reducer，Driverコーディングをします。
+
+**実現目標**
+
+　指定のコンテストにの単語の出現回数を統計します。
+
+入力ファイル：wc.txt
+
+出力ファイル：下記のようです
+
+```
+
+```
+
+**実現手順**
+
+- Hadoop依頼を導入
+
+```
+<dependency>
+    <groupId>org.apache.hadoop</groupId>
+    <artifactId>hadoop-common</artifactId>
+    <version>2.9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.apache.hadoop</groupId>
+    <artifactId>hadoop-client</artifactId>
+    <version>2.9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.apache.hadoop</groupId>
+    <artifactId>hadoop-hdfs</artifactId>
+    <version>2.9.2</version>
+</dependency>
+```
+
+- Mapper階段
+
+```
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Mapper;
+import java.io.IOException;
+
+public class WordCountMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
+    Text text = new Text();
+    IntWritable intWritable = new IntWritable(1);
+    @Override
+    protected void map(LongWritable key, Text value, Mapper<LongWritable, Text, Text, IntWritable>.Context context)
+            throws IOException, InterruptedException {
+        //一行文字を取得
+        String str = value.toString();
+        //文字を区切って単語数組になる
+        String[] strs = str.split(" ");
+        //出力
+        for (String s : strs) {
+            text.set(s);
+            context.write(text, intWritable);
+        }
+    }
+}
+```
+
+- Reducer階段
+
+```
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Reducer;
+
+public class WordCountReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
+    Integer sum;
+    IntWritable intWritable = new IntWritable();
+    @Override
+    protected void reduce(Text key, Iterable<IntWritable> values, Reducer<Text, IntWritable, Text, IntWritable>.Context context) {
+        sum = 0;
+        //累積加算
+        for (IntWritable value : values) {
+            sum += value.get();
+        }
+        //出力
+        intWritable.set(sum);
+    }
+}
+```
+
+- Driver階段
+
+```
+import java.io.IOException;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+public class WordcountDriver {
+    public static void main(String[] args) throws IOException,
+            ClassNotFoundException, InterruptedException {
+        //配置ファイルを設定とJobを作成
+        Configuration configuration = new Configuration();
+        Job job = Job.getInstance(configuration);
+        //Mapper、Reducer、Driverクラスを添加
+        job.setJarByClass(WordcountDriver.class);
+        job.setMapperClass(WordCountMapper.class);
+        job.setReducerClass(WordCountReducer.class);
+        //Mapの出力値のタイプ
+        job.setMapOutputKeyClass(Text.class);
+        job.setMapOutputValueClass(IntWritable.class);
+        //最終出力値のタイプ
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(IntWritable.class);
+        //入力と出力ファイルのアドレス
+        FileInputFormat.setInputPaths(job, new Path(args[0]));
+        FileOutputFormat.setOutputPath(job, new Path(args[1]));
+        //タスクをコミット
+        boolean result = job.waitForCompletion(true);
+        System.exit(result ? 0 : 1);
+    }
+}
+```
+
+- プログラムを運行
+
+　ここでローカル運行を選べて分散サービスを依頼しません。

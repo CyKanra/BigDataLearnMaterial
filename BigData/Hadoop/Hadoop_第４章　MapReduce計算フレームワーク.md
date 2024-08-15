@@ -64,6 +64,26 @@ MapReduceのタスクプロセスは、2つの処理段階に分かれていま�
 
 **実現手順**
 
+- HADOOP_HOME環境変数の設定
+
+　hadoop-2.9.2インストールパッケージがダウンロードして、あるディレクトリに置いて解凍を実行します。
+
+hadoop-2.9.2アドレス：[Apache Hadoop](https://hadoop.apache.org/release/2.9.2.html)
+
+![image-20240814161339059](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240814161339059.png)
+
+　win10システムなら`Environment variables`を検索して環境変数の設定画面が出ています。下の`System variables`に`HADOOP_HOME`と`E:\Program Files\hadoop-2.9.2`新規をします。
+
+![image-20240814163128459](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240814163128459.png)
+
+　次は、`System variables`に`Path`選択肢に入って`%HADOOP_HOME%\bin`アドレスを追加します。
+
+![image-20240814163956378](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240814163956378.png)
+
+　`E:\Program Files\hadoop-2.9.2\etc\hadoop\hadoop-env.cmd`ファイルにJAVA_HOMEアドレスを追加します。
+
+![image-20240814165420696](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240814165420696.png)
+
 - Hadoop依頼を導入
 
 ```
@@ -175,4 +195,20 @@ public class WordcountDriver {
 
 - プログラムを運行
 
-　ここでローカル運行を選べて分散サービスを依頼しません。
+　ここでローカル運行を選べて分散サービスを依頼しません。入力と出力ファイルのアドレス引数をprogram arguments欄に添加します。
+
+![image-20240814150354113](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240814150354113.png)
+
+![image-20240814150758606](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240814150758606.png)
+
+　wc.txt内容が下記です。
+
+```
+hadoop mapreduce yarn
+hdfs hadoop mapreduce
+mapreduce yarn nodemanager
+NameNode nodemanager
+ResourceManager
+ResourceManager
+```
+

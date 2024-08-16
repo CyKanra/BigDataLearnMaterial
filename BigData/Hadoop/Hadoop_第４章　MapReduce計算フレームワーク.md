@@ -2,7 +2,9 @@
 
 # 第４章　MapReduce計算フレームワーク
 
-　始める前にちょっとMapReduce使用現状を話します。Hadoop中にMapReduce計算フレームワークにおける知識が一番多いです。だが、実際の運用中にMapReduce登場する場合が少ない。Spark、Finkなどもっと優秀の計算フレームワークに代わられます。一方で、MapReduceコーディングは確かに複雑です。特にビッグデータに関わる計算には、MapReduceコーディングもう満足しません。MapReduceコーディングしなくても構わなく読み取れるとはオーケーです。従って、本章はコードに対して講釈を先頭にを置き、その後でMapReduce内部仕組みを講釈します。
+　始める前にちょっとMapReduce使用現状を話します。Hadoop中には、MapReduce計算フレームワークに関わって知識が一番多いです。だが、実際の運用中にMapReduce登場する場合が少ない。Spark、Finkなどもっと優秀の計算フレームワークに代わられます。一方で、MapReduceコーディングは確かに複雑です。特にビッグデータに関わる計算には、MapReduceコーディングもう満足しません。つまり、MapReduceコーディングしなくても構わなく読み取れるとはオーケーという要求があります。
+
+　MapReduceコーディングが本章の重点で、コードに対して講釈を先頭にを置き、その後でMapReduce内部仕組みを講釈します。
 
 ## 第１節　MapReduceの紹介
 
@@ -70,21 +72,31 @@ MapReduceのタスクプロセスは、2つの処理段階に分かれていま�
 
 hadoop-2.9.2アドレス：[Apache Hadoop](https://hadoop.apache.org/release/2.9.2.html)
 
-![image-20240814161339059](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240814161339059.png)
+![image-20240815140854345](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815140854345.png)
 
 　win10システムなら`Environment variables`を検索して環境変数の設定画面が出ています。下の`System variables`に`HADOOP_HOME`と`E:\Program Files\hadoop-2.9.2`新規をします。
 
-![image-20240814163128459](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240814163128459.png)
+![image-20240815141111477](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815141111477.png)
 
 　次は、`System variables`に`Path`選択肢に入って`%HADOOP_HOME%\bin`アドレスを追加します。
 
-![image-20240814163956378](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240814163956378.png)
+![image-20240815141210278](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815141210278.png)
 
-　`E:\Program Files\hadoop-2.9.2\etc\hadoop\hadoop-env.cmd`ファイルにJAVA_HOMEアドレスを追加します。
+　`D:\InstallPackage\hadoop-2.9.2\etc\hadoop\hadoop-env.cmd`ファイルにJAVA_HOMEアドレスを追加します。
 
-![image-20240814165420696](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240814165420696.png)
+![image-20240815141430567](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815141430567.png)
 
-- Hadoop依頼を導入
+　Hadoopサービスをwinにインストールするかどうか確認します。
+
+```
+hadoop version
+```
+
+![image-20240815141607264](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815141607264.png)
+
+> HADOOP_HOMEのアドレスにもhadoop-env.cmdファイルのJAVA_HOMEにも、スペースが許さない。JAVA_HOMEに対してのアドレスが存在する限り、環境変数にのJAVA_HOMEと不一致にしても構わない。
+
+- Hadoopプログラムの構築に入って、Maven依頼を導入
 
 ```
 <dependency>
@@ -212,3 +224,46 @@ ResourceManager
 ResourceManager
 ```
 
+- 環境の配置
+
+　その前にWindows環境の下で`D:\InstallPackage\hadoop-2.9.2\bin`にwinutils.exe、hadoop.dllというファイルが必要です。お勧め方法がネットから標準のをダウンロードして上書きします。
+
+ダウンロードURL：[GitHub - cdarlint/winutils: winutils.exe hadoop.dll and hdfs.dll binaries for hadoop windows](https://github.com/cdarlint/winutils)
+
+　目標ディレクトリに`Git Bash here`を開けて下記のコマンドを入力します。もし全てのプログラムをダウンロードしてほしいなら普通な操作をします。
+
+![image-20240815162547488](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815162547488.png)
+
+```
+git clone --no-checkout https://github.com/cdarlint/winutils.git
+#或いは
+git clone --no-checkout https://github.com/cdarlint/winutils.git <ローカルディレクトリ>
+
+cd winutils
+
+git sparse-checkout init --cone
+
+git sparse-checkout set hadoop-2.9.2/bin
+
+git checkout
+```
+
+![image-20240815162659093](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815162659093.png)
+
+　下図にのbinディレクトリを`D:\InstallPackage\hadoop-2.9.2`に上書きします。
+
+![image-20240815163522007](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815163522007.png)
+
+- WordcountDriverを運行
+
+![image-20240815163842771](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815163842771.png)
+
+　全て順調にしたら上図のように示します。下図の二つはwinutils.exe、hadoop.dll欠いてのエラーメッセージです。
+
+![image-20240815144525696](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815144525696.png)
+
+![image-20240815160024111](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815160024111.png)
+
+- `D:\output`結果の検査
+
+![image-20240815165630840](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815165630840.png)

@@ -286,7 +286,7 @@ git checkout
 
 - 分散式サービスの準備
 
-　第２章にHadoopのテストを真似てサービスに運行します。その前に`/wcoutput`の全てを消除しておく必要です。
+　第２章にHadoopのテストを真似てサービスに運行するつもりです。その前に`/wcoutput`の全てを消除しておく必要です。
 
 ![image-20240816152923496](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240816152923496.png)
 
@@ -303,6 +303,59 @@ hdfs dfs -chmod -R 777 /
 
 - プログラムをパッケージ化にする
 
-　元のプログラムには複数のmainメソッドがあり、今回Hadoopディレクトリのコードしかが必要ありません。どうやってHadoopディレクトリの部分だけをパッケージ化にして、或いはWordCountDriverクラスのmainメソッドを呼び出すだけと、二つの方法を紹介します。
+　ネット上で色々方法を紹介してあります。ここでIdeaツールを使ってパッケージ化にします。図の右側サイドバーMavenを開けてpackage選択肢をダブルクリックするとパッケージ化を進行し始めます
 
-![image-20240816155903392](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240816155903392.png)
+![image-20240820063405560](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240820063405560.png)
+
+![image-20240820063513855](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240820063513855.png)
+
+　プログラムの下にtargetディレクトリにパッケージがあります。
+
+![image-20240820070613455](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240820070613455.png)
+
+　もし全てのコードをパッケージ化にしたくないなら、Mavenパッケージ化のプラグイン配置に下の内容を添加します。
+
+```
+<plugins>
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+            <includes>
+                <include>com/javapractice/hadoop/**</include>
+            </includes>
+        </configuration>
+    </plugin>
+</plugins>
+```
+
+![image-20240820072208378](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240820072208378.png)
+
+　`rz`コマンドを入力してパッケージをアップロードします。
+
+![image-20240820071555383](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240820071555383.png)
+
+![image-20240820071622495](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240820071622495.png)
+
+- パッケージを運行
+
+```
+hadoop jar JavaPractice-1.0.0-SNAPSHOT.jar com.javapractice.hadoop.WordCountDriver /wcinput /wcoutput
+```
+
+![image-20240820074348930](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240820074348930.png)
+
+![image-20240820074437964](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240820074437964.png)
+
+　画面に出力内容が出ました。`http://192.168.31.135:19888/jobhistory`に入って対応のタスクログがあります。
+
+![image-20240820074706094](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240820074706094.png)
+
+```
+#出力内容を検査
+hdfs dfs -cat /wcoutput/part-r-00000
+```
+
+![image-20240820074843969](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240820074843969.png)
+
+　ここまで手動的にWordCount機能を実現するのが終わりです。

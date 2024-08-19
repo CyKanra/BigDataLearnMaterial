@@ -45,7 +45,7 @@
 ![image-20240311155255355](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240311155255355.png)
 
 - NameNode(nn)：Hdfsクラスタの管理者、Master
-  - Hdfsの名前空間（NameSpace）を維持管理
+  - Hdfsの名前空間（NameSpace）を管理
   - 副本情報を管理
   - ファイルブロックのマッピング情報を記録
   - クライアントの読み書き請求を処理
@@ -54,10 +54,10 @@
   - データブロックを保存
   - データブロックの読み書きを担当
 - Client：クライアント
-  - ファイルをHDFSにアップロードする際、ClientはファイルをBlockに分割してアップロードを行い
+  - ファイルをHDFSにアップロードする際、ClientはファイルをBlockに分割してアップロードを行う
   - NameNodeと情報をやり取りし、ファイルの位置情報を取得
-  - DataNodeと情報をやり取り、ファイルの読み書きを行い
-  - Clientを通じてコマンドを使用し、HDFSの管理やアクセスを実現でき
+  - DataNodeと情報をやり取り、ファイルの読み書きを行う
+  - Clientを通じてコマンドを使用し、HDFSの管理やアクセスを実現する
 
 ### 第２節　クライアント操作
 
@@ -69,7 +69,7 @@
 hadoop fs コマンド
 hdfs dfs コマンド
 
-#一様の効果
+#同じな効果
 hadoop fs -cat /wcoutput/part-r-00000
 hdfs dfs -cat /wcoutput/part-r-00000
 ```
@@ -85,25 +85,26 @@ hadoop fs
 - 常用のコマンド
 
 ```
-#具体のコマンドに関連の引数を表し
+#具体のコマンドに関連の引数を表す
 hadoop fs -help mkdir
 
-#目録の顕示
+#ディレクトリの顕示
 hadoop fs -ls /
 
-#目録を作成
+#ディレクトリを作成
 hadoop fs -mkdir -p /bigdata/test
 
-#目録を消除し、非空白目録が消除されない
+#ディレクトリを消除し、非空白ディレクトリが消除されない
 hadoop fs -rmdir -p /bigdata/test
 ```
 
 ![image-20240410155836111](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240410155836111.png)
 
-- 本地のファイルをHDFSにアップロードし、元のファイルを消除してあり
+- 本地のファイルをHDFSにアップロードし、元のファイルを消除してある
 
 ```
 vim hadoopTest.txt
+
 hadoop fs -moveFromLocal hadoopTest.txt /bigdata/test
 ```
 

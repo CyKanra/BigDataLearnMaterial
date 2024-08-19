@@ -58,13 +58,16 @@ MapReduceのタスクプロセスは、2つの処理段階に分かれていま�
 
 入力ファイル：wc.txt
 
-出力ファイル：下記のようです
+出力ファイル：大体下記のようです
 
 ```
-
+Bigdata	2
+Fink	3
+HBase	2
+Hive	2
 ```
 
-**実現手順**
+**環境準備**
 
 - HADOOP_HOME環境変数の設定
 
@@ -95,6 +98,8 @@ hadoop version
 ![image-20240815141607264](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815141607264.png)
 
 > HADOOP_HOMEのアドレスにもhadoop-env.cmdファイルのJAVA_HOMEにも、スペースが許さない。JAVA_HOMEに対してのアドレスが存在する限り、環境変数にのJAVA_HOMEと不一致にしても構わない。
+
+**コーディング**
 
 - Hadoopプログラムの構築に入って、Maven依頼を導入
 
@@ -155,7 +160,8 @@ public class WordCountReducer extends Reducer<Text, IntWritable, Text, IntWritab
     Integer sum;
     IntWritable intWritable = new IntWritable();
     @Override
-    protected void reduce(Text key, Iterable<IntWritable> values, Reducer<Text, IntWritable, Text, IntWritable>.Context context) {
+    protected void reduce(Text key, Iterable<IntWritable> values, Reducer<Text, IntWritable, Text, IntWritable>.Context context) 
+            throws IOException, InterruptedException {
         sum = 0;
         //累積加算
         for (IntWritable value : values) {
@@ -163,6 +169,7 @@ public class WordCountReducer extends Reducer<Text, IntWritable, Text, IntWritab
         }
         //出力
         intWritable.set(sum);
+        context.write(key,intWritable);
     }
 }
 ```
@@ -205,40 +212,43 @@ public class WordcountDriver {
 }
 ```
 
+**プログラム運行（ローカル）**
+
 - プログラムを運行
 
-　ここでローカル運行を選べて分散サービスを依頼しません。入力と出力ファイルのアドレス引数をprogram arguments欄に添加します。
+　ここでローカル運行を選べて分散サービスを依頼しません。入力と出力ファイルのアドレス引数をprogram arguments欄に添加します。因みに、出力アドレスが必ず存在しません。
 
 ![image-20240814150354113](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240814150354113.png)
 
-![image-20240814150758606](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240814150758606.png)
+![image-20240816095735458](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240816095735458.png)
 
 　wc.txt内容が下記です。
 
 ```
-hadoop mapreduce yarn
-hdfs hadoop mapreduce
-mapreduce yarn nodemanager
-NameNode nodemanager
-ResourceManager
-ResourceManager
+hadoop Zookeeper Hive mapreduce yarn HBase
+hdfs Spark Zookeeper hadoop mapreduce
+mapreduce Fink yarn nodemanager Hive
+NameNode nodemanager Spark
+Fink Bigdata ResourceManager Bigdata Zookeeper
+HBase Zookeeper Spark Fink
 ```
 
 - 環境の配置
 
-　その前にWindows環境の下で`D:\InstallPackage\hadoop-2.9.2\bin`にwinutils.exe、hadoop.dllというファイルが必要です。お勧め方法がネットから標準のをダウンロードして上書きします。
+　その前にWindows環境の下で`D:\InstallPackage\hadoop-2.9.2\bin`にwinutils.exe、hadoop.dllというファイルが必要です。お勧め方法がネットから標準のをダウンロードしてローカルを上書きします。
 
 ダウンロードURL：[GitHub - cdarlint/winutils: winutils.exe hadoop.dll and hdfs.dll binaries for hadoop windows](https://github.com/cdarlint/winutils)
 
-　目標ディレクトリに`Git Bash here`を開けて下記のコマンドを入力します。もし全てのプログラムをダウンロードしてほしいなら普通な操作をします。
+　需要のディレクトリだけをダウンロードしてほしいと、`Git Bash here`を開けて下記のコマンドを入力します。
 
-![image-20240815162547488](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815162547488.png)
+![image-20240816100042378](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240816100042378.png)
 
 ```
 git clone --no-checkout https://github.com/cdarlint/winutils.git
 #或いは
 git clone --no-checkout https://github.com/cdarlint/winutils.git <ローカルディレクトリ>
 
+#最上層のディレクトリに入って
 cd winutils
 
 git sparse-checkout init --cone
@@ -258,7 +268,7 @@ git checkout
 
 ![image-20240815163842771](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815163842771.png)
 
-　全て順調にしたら上図のように示します。下図の二つはwinutils.exe、hadoop.dll欠いてのエラーメッセージです。
+　全て順調にしたら上図のように成功になります。下図の二つはwinutils.exe、hadoop.dll欠いてのエラーメッセージで、参考だとできます。。
 
 ![image-20240815144525696](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815144525696.png)
 
@@ -266,4 +276,33 @@ git checkout
 
 - `D:\output`結果の検査
 
-![image-20240815165630840](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815165630840.png)
+![image-20240816095655450](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240816095655450.png)
+
+- part-r-00000結果ファイルを開けて下図のように表れる
+
+![image-20240816095901152](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240816095901152.png)
+
+**プログラム運行（Hadoop分散式サービス）**
+
+- 分散式サービスの準備
+
+　第２章にHadoopのテストを真似てサービスに運行します。その前に`/wcoutput`の全てを消除しておく必要です。
+
+![image-20240816152923496](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240816152923496.png)
+
+```
+#そのディレクトリに権限を与える
+hdfs dfs -chmod -R 777 /
+```
+
+![image-20240816153712200](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240816153712200.png)
+
+　エラーメッセージまだあるけれど、実際に消除できます。
+
+![image-20240816153516317](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240816153516317.png)
+
+- プログラムをパッケージ化にする
+
+　元のプログラムには複数のmainメソッドがあり、今回Hadoopディレクトリのコードしかが必要ありません。どうやってHadoopディレクトリの部分だけをパッケージ化にして、或いはWordCountDriverクラスのmainメソッドを呼び出すだけと、二つの方法を紹介します。
+
+![image-20240816155903392](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240816155903392.png)

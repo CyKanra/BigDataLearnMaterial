@@ -268,7 +268,7 @@ git checkout
 
 ![image-20240815163842771](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815163842771.png)
 
-　全て順調にしたら上図のように成功になります。下図の二つはwinutils.exe、hadoop.dll欠いてのエラーメッセージで、参考だとできます。。
+　全て順調にしたら上図のように成功になります。下図の二つはwinutils.exe、hadoop.dll欠いてのエラーメッセージで、参考とできます。。
 
 ![image-20240815144525696](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815144525696.png)
 
@@ -364,13 +364,55 @@ hdfs dfs -cat /wcoutput/part-r-00000
 
 　直列化は、ネットワーク通信でデータを送信したり、オブジェクトをファイルに永続化したりする際に、送信効率、格納空間など考えてオブジェクトをバイナリ構造に変換する過程です。
 
-　先紹介したWordcount案例が、MapperクラスやReducerクラスには自分の特有直列化型の制約があり、たとえばカスタムMapperには4つの引数の型がありますが、それらの型は一般的なJavaの基本型ではありません。
+　先紹介したWordcount案例が、MapperクラスやReducerクラスには自分の独自の直列化型があり、例えばIntWritable、longWritable型がありますが、それらの型は一般的なJavaの基本型ではありません。
 
- **なぜHadoopはJava標準のSerializableを使わずに独自のシリアライズ形式を選んだのか？**
+ 　なぜHadoopはJava標準のSerializableを使わずに独自の直列化の形式を選んだのか？Hadoopでは、クラスター内の複数の節点間のプロセス通信がRPC（Remote Procedure Call）を通じて実現されます。RPCはメッセージを直列化にしてバイナリストリームに変換し、それをリモート節点に送信します。リモート節点は受信したバイナリデータを逆直列化して元のメッセージに戻します。そのため、RPCは以下のような特徴を追求します：
 
-　シリアライズは分散プログラムにおいて非常に重要です。Hadoopでは、クラスター内の複数のノード間のプロセス通信がRPC（リモートプロシージャコール：Remote Procedure Call）を通じて実現されます。RPCはメッセージをシリアライズしてバイナリストリームに変換し、それをリモートノードに送信します。リモートノードは受信したバイナリデータを逆シリアライズして元のメッセージに戻します。そのため、RPCは以下のような特徴を追求します：
+- **コンパクト**: データがよりコンパクトになり、ネットワーク帯域を効率的に利用できる。
+- **高速性**: 直列化と逆直列化の性能負荷が低い。
 
-- **コンパクトさ**: データがよりコンパクトになり、ネットワーク帯域を効率的に利用できる。
-- **高速性**: シリアライズとデシリアライズの性能負荷が低い。
+　Hadoopは、独自のシリアライズ形式であるWritableを使用しており、これはJavaのシリアライズ形式であるSerializableよりもコンパクトで高速です。Serializableを使ってオブジェクトを直列化にすると、検証情報、ヘッダー、継承体系などの多くの追加情報が付加されます。
 
-Hadoopは、独自のシリアライズ形式であるWritableを使用しており、これはJavaのシリアライズ形式であるSerializableよりもコンパクトで高速です。Serializableを使ってオブジェクトをシリアライズすると、検証情報、ヘッダー、継承体系などの多くの追加情報が付加されます。
+　Hadoopにの基本データ類型とJava伝統基本類型の対照表。
+
+| Java類型 | Hadoop Writable類型 |
+| -------- | ------------------- |
+| boolean  | BooleanWritable     |
+| byte     | ByteWritable        |
+| int      | IntWritable         |
+| float    | FloatWritable       |
+| long     | LongWritable        |
+| double   | DoubleWritable      |
+| String   | Text                |
+| map      | MapWritable         |
+| array    | ArrayWritable       |
+
+## 第５節　直列化インターフェース
+
+　Haddoop内部がHaddoop自分のデータ類型によって通信します。もしBean対象をHadoopに渡してBean対象が必ずWritableインターフェースを実装します。
+
+```
+public class Student implements Writable {
+
+    private Long id;
+    private String name;
+    private Integer age;
+	//直列化
+    @Override
+    public void write(DataOutput dataOutput) throws IOException {
+        dataOutput.writeLong(id);
+        dataOutput.writeUTF(name);
+        dataOutput.writeInt(age);
+    }
+	//逆直列化
+    @Override
+    public void readFields(DataInput dataInput) throws IOException {
+        this.id = dataInput.readLong();
+        this.name = dataInput.readUTF();
+        this.age = dataInput.readInt();
+    }
+}
+```
+
+　Bean実体がWritableインターフェースを実装して二つ直列化write()と逆直列化readFields()メソッドが上書きする必要です。直列化と逆直列化の類型の扱いが必ず一致にします。後は、String類型の直列化がwriteUTF()メソッドに対応し、writeString()みたいメソッドがありません。
+

@@ -94,13 +94,13 @@ hadoop fs -ls /
 #ディレクトリを作成
 hadoop fs -mkdir -p /bigdata/test
 
-#ディレクトリを消除し、非空白ディレクトリが消除されない
+#ディレクトリを消除し、空でないディレクトリが消除られない
 hadoop fs -rmdir -p /bigdata/test
 ```
 
 ![image-20240410155836111](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240410155836111.png)
 
-- 本地のファイルをHDFSにアップロードし、元のファイルを消除してある
+- 本地のファイルをHDFSにアップロードし、元のファイルを消除られてある
 
 ```
 vim hadoopTest.txt
@@ -110,7 +110,7 @@ hadoop fs -moveFromLocal hadoopTest.txt /bigdata/test
 
 ![image-20240410161036302](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240410161036302.png)
 
-- 目標ファイルをhadoopTestの中に追加し、元のファイルが保留され
+- 目標ファイルをhadoopTestの中に追加し、元のファイルが保留される
 
 ```
 vim hdfsTest.txt
@@ -119,13 +119,13 @@ hadoop fs -appendToFile hdfsTest.txt /bigdata/test/hadoopTest.txt
 #全てのファイルを表し
 hadoop fs -cat /bigdata/test/hadoopTest.txt
 
-#ファイルの末尾を表し
+#ファイルの末尾内容を表す
 hadoop fs -tail /bigdata/test/hadoopTest.txt
 ```
 
 ![image-20240410162514743](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240410162514743.png)
 
-- ファイルをコピーして本地又はHDFSに発送し、二つの書き方が一様で
+- ファイルをコピーして本地又はHDFSに発送し、二つの書き方が一様です
 
 ```
 hadoop fs -copyFromLocal hdfsTest.txt /bigdata/test/
@@ -157,7 +157,7 @@ hadoop fs -touchz /bigdata/test/touchTest.txt
 
 ![image-20240415081436750](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240415081436750.png)
 
-　　ファイルの作成のコマンドあるけれど、HDFS上に書き込みのコマンドがありません。この点から見えてはファイルの改修などが支持することが上手くない、ただ整体の大小の変わりで、データ内容の変更に係わらずの場合が適当です。
+　ファイルの作成のコマンドあるけれど、HDFS上に書き込みのコマンドがありません。この点から見えてファイルの変更におけての支持が上手くない、ただ整体の大小の変わりで、データ内容の変更に係わらず場合が適用です。
 
 ```
 #HDFSの権限管理コマンドがlinuxと同じで

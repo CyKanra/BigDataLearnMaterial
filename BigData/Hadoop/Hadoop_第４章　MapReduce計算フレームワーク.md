@@ -416,3 +416,4 @@ public class Student implements Writable {
 
 　Bean実体がWritableインターフェースを実装して二つ直列化write()と逆直列化readFields()メソッドが上書きする必要です。直列化と逆直列化の類型の扱いが必ず一致にします。後は、String類型の直列化がwriteUTF()メソッドに対応し、writeString()みたいメソッドがありません。
 
+## 第５節　案例

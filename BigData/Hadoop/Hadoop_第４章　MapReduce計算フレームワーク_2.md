@@ -6,9 +6,13 @@
 
 ## 第７節　MapReduceの原理分析
 
+　全体のMapReduce流れがMapTaskとReduceTaskに分けておき、紹介を進めます。
+
 ### 7.1　MapTask運行仕組み
 
 ![Screenshot 2024-09-03 214128](C:\Users\Izaya\Desktop\Screenshot 2024-09-03 214128.png)
+
+**Read階段**
 
 - まず、データを読み取るコンポーネントであるInputFormat（デフォルトではTextInputFormat）が、`getSplits` メソッドを使用して入力ディレクトリ内のファイルを論理的に切り分けてsplitsを取得します。splitsの数に応じて、同じ数のMapTaskが起動されます。splitとblockの対応関係は、デフォルトでは1対1です。
 

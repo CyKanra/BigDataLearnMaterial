@@ -12,9 +12,16 @@
 
 ![Screenshot 2024-09-03 214128](C:\Users\Izaya\Desktop\Screenshot 2024-09-03 214128.png)
 
+![img](D:\OneDrive\picture\Typora\BigData\Hadoop\a9b2a382aae117feefb7706a65771940.png)
+
 **Read階段**
 
-- まず、データを読み取るコンポーネントであるInputFormat（デフォルトではTextInputFormat）が、`getSplits` メソッドを使用して入力ディレクトリ内のファイルを論理的に切り分けてsplitsを取得します。splitsの数に応じて、同じ数のMapTaskが起動されます。splitとblockの対応関係は、デフォルトでは1対1です。
+- まず、データを読み取る時にgetSplits() メソッドを使用して入力ファイルを論理的に切り分けてsplitsを取得します。splitsの数に応じて同じ数のMapTaskが起動されます。splitとblockの対応関係は、デフォルトでは1対1です。
+- InputFormatクラスを継承するFileInputFormatが、getSplits()メソッドを実装してファイルの切り分けをします。この切り分けは論理的（ロジック）で、物理的な側ではありません。
+
+![image-20240923114610607](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240923114610607.png)
+
+- 
 
 入力ファイルをsplitsに分割した後、RecordReaderオブジェクト（デフォルトではLineRecordReader）が\nを区切りとしてデータを読み込み、1行分のデータを<key, value>として返します。Keyは各行の先頭文字のオフセット値、valueはその行のテキスト内容を表します。
 

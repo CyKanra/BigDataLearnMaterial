@@ -23,7 +23,8 @@
 ![image-20240923114610607](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240923114610607.png)
 
 - 切り分けされたのsplit情報、実行するコードを含むjarファイル、そしてジョブ（Job）実行に必要な設定情報（XML設定ファイルなど）を作成します。この一連の情報がまとめられ、YARNに提出されます。
-- YARNは、この提出されたジョブに対して必要なリソース（メモリ、CPUなど）を割り当て、ジョブを実行します。YARNはまず MrAppMaster（MapReduce Application Master）を起動します。MrAppMasterは、ジョブの周期を管理し、各タスクの実行順序を制定します。
+- YARNは、この提出されたジョブに対して必要なリソース（メモリ、CPUなど）を割り当ててジョブを実行します。YARNはまず MrAppMaster（MapReduce Application Master）を起動します。MrAppMasterは、ジョブの周期を管理し、各タスクの実行順序を制定します。
+- MrAppMasterがMapTaskを
 
 入力ファイルをsplitsに分割した後、RecordReaderオブジェクト（デフォルトではLineRecordReader）が\nを区切りとしてデータを読み込み、1行分のデータを<key, value>として返します。Keyは各行の先頭文字のオフセット値、valueはその行のテキスト内容を表します。
 

@@ -10,14 +10,12 @@
 
 ### 7.1　MapTask運行仕組み
 
-![Screenshot 2024-09-03 214128](C:\Users\Izaya\Desktop\Screenshot 2024-09-03 214128.png)
-
 ![img](D:\OneDrive\picture\Typora\BigData\Hadoop\a9b2a382aae117feefb7706a65771940.png)
 
 **Read階段**
 
 - まず、目標ファイルを実際に読み込む前にHDFSにアップロードしてあり、ブロック（block）に切り分けて各節点に割り当てます。
-- データを読み込む時にgetSplits() メソッドを使用してブロックを切片（splits）に切り分けます。そのの切り分けが理論的で、ブロックになる物理的ではなりません。デフォルト場合でsplitsの大小が128Mで、ブロックのデフォルト大小と同じになります。つまり、デフォルト場合ではsplitとblock関係が一対一です。あと、splitsの数量に応じて次の階段の同じなMapTask数を起動されてあります。
+- データを読み込む時にgetSplits() メソッドを使用してブロックを切片（splits）に切り分けます。そのの切り分けが理論的で、物理的ではありません。デフォルト場合でsplitsの大小が128Mで、ブロックのデフォルト大小と同じになります。つまり、デフォルト場合ではsplitとblock関係が一対一です。あと、splitsの数量に応じて次の階段の同じなMapTask数を起動されてあります。
 - InputFormatクラスを継承するFileInputFormatが、getSplits()メソッドを実装してファイルの切り分けをします。この切り分けは論理的（ロジック）で、物理的な切り分けではありません。
 
 ![image-20240923114610607](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240923114610607.png)
@@ -28,9 +26,15 @@
 **Map階段**
 
 - Map階段に実行するロジックは書き直されたのmap()メソッドです。
-- 入力の[key/value]値が分別ドキュメントの行数keyと当の行の文字です。出力の[key/value]値が一つ単語textとその単語の計数1です。旧の解析されて出たkey/value値を輸出したいkey/value値に転換する過程です。
+- 入力の[key/value]値が分別ドキュメントの行数keyと当の行の文字です。出力の[key/value]値が一つ単語textとその単語の計数1です。入力key/value値を新しいkey/value値に転換する過程です。
 
 ![image-20241014162847885](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20241014162847885.png)
+
+**Collect階段**
+
+- mapの処理が完了した後、mapの各結果は`context.write`を通してデータが収集されます。collectの中ではまず分区処理が行われ、デフォルトでHashPartitionerが使用されます。
+
+
 
 入力ファイルをsplitsに分割した後、RecordReaderオブジェクト（デフォルトではLineRecordReader）が\nを区切りとしてデータを読み込み、1行分のデータを<key, value>として返します。Keyは各行の先頭文字のオフセット値、valueはその行のテキスト内容を表します。
 

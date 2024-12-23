@@ -14,23 +14,26 @@
 
 **Read階段**
 
-- まず、目標ファイルを読み込む前にローカルでブロック（block）に切り分けて各節点に割り当てます。一般的には128MB固定長に従って分割をし、特別のルールがありません。
+- まず、目標ファイルを読み込む前にローカルでブロック（block）に切り分けて各節点に割り当てます。一般的には128MB固定長に従って分割し、特別のルールがありません。
 - データを読み込む時にgetSplits() メソッドを使用してブロックを切片（splits）に切り分けます。それは理論的な切り分け、デフォルト場合でsplitsの大小は128MBで、ブロックのデフォルト大小と同じです。即ち、デフォルト場合でsplitとblock関係が一対一です。あと、splitsの数量に応じて次の階段に同様なMapTask数を起動されてあります。
 - InputFormatクラスを継承するFileInputFormatが、getSplits()メソッドを実装してファイルの切り分けをします。この切り分けは論理的（ロジック）で、物理的な切り分けではありません。
 
 ![image-20240923114610607](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240923114610607.png)
 
 - 切り分けされたのsplit情報、実行するコードを含むjarファイル、そしてジョブ（Job）実行に必要な設定情報（XML設定ファイルなど）を作成します。この一連の情報がまとめられ、YARNに提出されます。
-- YARNは、この提出されたジョブに対して必要なリソース（メモリ、CPUなど）を割り当ててジョブを実行します。YARNはまず MrAppMaster（MapReduce Application Master）を起動します。MrAppMasterは、ジョブの周期を管理し、各タスクの実行順序を制定します。後のMapTaskとReduceTask、MapReduceジョブ全体がMrAppMasterの制御で完成されます。
+- YARNは、この提出されたジョブに対して、ジョブを実行する必要なリソース（メモリ、CPUなど）を割り当てます。YARNはまず MrAppMaster（MapReduce Application Master）という実体を起動して、ジョブの周期を管理し、流れの実行順序を制定します。後のMapTask、ReduceTaskとMapReduceジョブ処理がMrAppMasterの制御で仕上げます。
+
+![image-20241223075836684](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20241223075836684.png)
 
 **Map階段**
 
-- Map階段に実行するロジックは書き直されたのmap()メソッドです。
+- Map階段に実行するロジックは書き直されたmap()メソッドが担当します。
 - 入力の[key/value]値が分別ドキュメントの行数keyと当の行の文字です。出力の[key/value]値が一つ単語textとその単語の計数1です。入力key/value値を新しいkey/value値に転換する過程です。
 
 ![image-20241014162847885](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20241014162847885.png)
 
-- mapの処理が完了した後、mapの各結果は`context.write`を通じてデータが収集されます。この収集（collect）過程では、最初に分区処理が行われ、デフォルトではHashPartitionerが使用されます。
+- mapの処理が完了した後、mapの各結果は`context.write`を通じてデータが収集されます。
+- この収集（collect）流れの前に切り分け処理があります。データのkey値をハッシュ化（Hash）し、Reduceタスクの数で割って余りを取り、同じ余りによってデータを各タスクに割り当てます。目的は、類似のkey値を同じReduceTaskジョブに入れたら、後のデータの併合処理がやすくなれます。同時にReduceタスクの処理負荷を均等化することもできます。
 
 **Collect階段**
 

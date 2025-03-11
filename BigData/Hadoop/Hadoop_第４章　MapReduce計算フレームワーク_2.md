@@ -2,11 +2,11 @@
 
 # 第４章　MapReduce計算フレームワーク-2/2
 
-　第４章には、主にMapReduceの運行原理に関する紹介をします。
+　第４章には、主にMapReduceの運行原理について紹介する。。
 
 ## 第７節　MapReduceの原理分析
 
-　全体のMapReduce流れがMapTaskとReduceTaskに分けておきて紹介を進めます。
+　全体のMapReduce流れがMapTaskとReduceTaskに分けておきて紹介を進める。
 
 ### 7.1　MapTask運行仕組み
 
@@ -80,11 +80,31 @@
 
 　図1には、切片の大小とブロックが同じ、ブロックの全ては何も変わらなくて一つのタスクに入れて処理をします。図2は、100Mを単位として128Mデータが100Mと28Mに分けられました。残りの28Mデータが100Mに揃えておくため次のブロックに移動することが必要です。その過程には、最終タスク数が変わってないけど、データの移動があると余分な資源を消費するになります。
 
-　その例を挙げて話したいのは切片大小を減ってタスク数が増えても実際に効率的になりません。ただ、ブロックと切片大小を一緒に縮めてタスク数が増えすぎを防ぐ上に適切に並列度を高めるとは、効率的にすることができます。
+　その例を挙げて話したいのは切片大小を減ってタスク数が増えても実際に効率的になりません。ただ、ブロックと切片大小を一緒に縮めてタスク数は増えすぎを防ぐ上に適切に並列度を高めるとは、効率的にすることができます。
 
 ```
-#相関設定
+# hdfs-default.xml設定
 dfs.blocksize=128MB
-mapreduce.input.fileinputformat.split.maxsize=128MB
+
+# mapred-default.xml配置ファイル
+mapreduce.input.fileinputformat.split.maxsize=256MB
+mapreduce.input.fileinputformat.split.minsize=64MB
 ```
 
+　ちょっとソースコードから見て、ブロックと切片の大小がどこから取得する。後。どんなルールで適切な切片サイズを決める。
+
+　ブロックサイズが直接配置ファイルから得ってsetBlockSize()みたいメソッドがありません。
+
+![image-20250309113524574](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250309113524574.png)
+
+![image-20250309112553210](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250309112553210.png)
+
+　実際の切片サイズは、ブロック、切片の最大値と切片の最小値を比べて一つに決める。computeSplitSizeメソッドから見えて、blockサイズをmaxSizeにより大きく設定すると、minSizeにより小さく設定する二つの状況は意味ないんです。切片サイズの範囲を制御して大きすぎと小さすぎになるせいで効率が下がることを防ぐ。それはなぜmaxSizeを増やしてもタスク数が変わってない。
+
+![image-20250309112059668](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250309112059668.png)
+
+![image-20250309120204543](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250309120204543.png)
+
+　切片の実際の大小が最小値と最大値の間に浮動し、
+
+![image-20250309120623668](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250309120623668.png)

@@ -6,63 +6,62 @@
 
 ### 4.1　メタデータ管理の概説
 
-　メタデータは、HDFSにのデータの様々な属性を記録するものです。例えば、データのサイズ、作成の時刻、格納のディレクトリなど情報、何かスナップ写真、或いは管理目録みたい存在です。データの更新する時、メタデータによってデータ情報を早く取得し、更新操作を実行する。もちろん、メタデータはデータ自身じゃなく、データとデータのバックアップが全て節点（DataNode）になくなるなら、データを回復することができない。
+　メタデータは、HDFSに格納されたデータの様々な属性を記録するものです。例えば、データのサイズ、作成時刻、格納ディレクトリなど情報であり、言わば「スナップ写真」、或いは「管理目録」のような役割を果たす。
 
-**Fsimage鏡像ファイル**：メタデータの永続的に格納する箇所であり、HDFS内のディレクトリ情報とファイルのメタデータ情報を含んでいる。ただ、ファイルを格納するブロックの位置情報がない。ファイルにつながるブロックの情報は、メモリにのみ保存されており、Dクラスタ起動ときにNameNodeがdatanodeにて取得し、断続的に更新されます。
+　データの更新する際には、メタデータ参照することで情報を素早く取得し、更新操作を実行することができる。もちろん、メタデータはデータ自身じゃなく、データとそのバックアップが全ての節点（DataNode）に失われてしまった場合、データの回復はできない。
 
-　メタデータの記録量と記録の書き込み速さを兼ね合おうと、FsimageとEdits二種のファイルを引用してメタデータ管理を実現する。
+**Fsimage鏡像ファイル**：メタデータを保存するファイルで、ディスク上に保持されるため、電源が落ちてもデータが失われることはない。
 
-**Edits編集ログ**：全ての変更操作（ファイルの作成、削除、又は変更）を記録するログです。クライアントから行った変更操作はまずeditsファイルに記録され、記録の過程がメモリに実行します。 
+　ビッグデータを管理するFsimageファイルは、非常に大きなサイズになることがある。そのため、毎回更新記録をFsimageに反映すると処理が遅くなってしまった。
 
-　　ディスクに格納したFsimageとメモリに最新の変更記録Editsに結びつけて完全のメタデータファイルに組み合わせてなります。
+　この問題を解決するために、メタデータの記録量と書込み速度のバランスを取る手法として、Editsログを導入されている。更新操作を個別に記録し、効率的に処理する。
+
+**Edits編集ログ**：全ての更新操作（新規、削除、改修など）を記録するログファイトです。その更新操作は先ずEditsファイルに書き込まれ、この書き込み処理はメモリ上で行う。 一定の量に蓄積されると、Editsの内容をFsimageに統合される。
+
+　　ディスク上のFsimageファイルと、メモリ上のEditsログを組み合わせることで、完全なメタデータが構成される。なお、ファイルを格納しているブロックの位置情報は、どちらにも記録されてない。Hadoop起動する時に各DataNodeから取得し、リアタイで最新の情報を読み込む。
 
 ## 第５節　NNと2NN
 
-　　メタデータ管理にはNameNodeやSecondaryNameNodeから共同に担当します。
+　メタデータの管理は、NameNodeとSecondaryNameNode2つの節点によって共同で行う。
 
-**NameNode**：HDFSのメタデータを永続的に保存し、クライアントからのHDFSに対するさまざまな操作の請求を処理します。
+**NameNode**：メタデータを保存するところ、クライアントからの要求を処理する。
 
-**SecondaryNameNode**：NameNodeを協力してFsimageとEditsを併せて完全なメタデータを作成する役割を担当します。
+**SecondaryNameNode**：NameNodeを補助し、FsimageとEditsを統合する役割を担当する。
 
-　　SecondaryNameNode名称から見てNameNodeのバックアップサーバーみたいの存在で、ただ2NNがHDFS中にの一つの部品だけで、単独で運行するのは意味ありません。NNにも2NNにもメタデータの処理に関係があります。実はメタデータの処理が確かに一番目重要の部分です。
-
-　　本節はどうメタデータの処理をめぐってNNや2NNの運行仕組み、メタデータの構造を紹介してきます。
+　本節では、メタデータの処理に関連するNameNode(NN)やSecondaryNameNode(2NN)の動作の仕組みや、メタデータの構造について紹介する。
 
 ### 5.1　メタデータ管理の流れ
 
 ![OIP1](D:\OneDrive\picture\Typora\BigData\Hadoop\OIP1.jpg)
 
-NameNode部する
+NameNode(NN)部分：
 
-1. 最初NameNodeを初期化にして新たなFsimageとEditsファイルを作成します。その以外起動するときNameNodeが最新のFsimageとEditsファイルをメモリに読み込みます。
-2. クライアントから変更操作をメタデータに実行するアクセスを受信します。
-3. NameNodeが変更操作しか記録しません。全ての変更記録が先ずEditsファイルに追加していきます。一定の記録を積み重ねるまでに、元の編集されているedits_inprogress_001ファイルがedits_001に保存されて何の改修でも進行しません。その代わりにedits_inprogress_002ファイルが処理中のEditsファイルとします。一回のログローテート「log rotation」がそういう過程です。
+1. 初めてHadoopを起動する際には、初期化を行い、Fsimageファイルを新規作成する必要がある。それ以外の場合は通常通り起動し、NameNodeは最新のFsimageファイルを読み込む。
+2. クライアントから要求を受信する。
+3. NameNodeが変更操作のみを記録する。変更操作は先ずEditsファイルに追記される。ある程度記録が蓄積されると、編集中だったedits_inprogress_001ファイルがedits_001という名前で保存され、編集が終了した状態になる。そして、新たedits_inprogress_002ファイルを作成され、以後の更新記録はこのファイルに書き込まれる。このような一連の流れが、1回の完全の更新処理のサイクルとなる。
 
-　　NameNodeの役割が大体上記のように、纏めてのはクライアントのリクエストを受信、トランザクション記録、editsのログローテート3点であります。
+Secondary NameNode(2NN)部分：
 
-Secondary NameNode部分：
+1. Secondary NameNodeはNameNodeに対して、更新ログの統合作業が必要かどうかを問い合わせる信号を送信する。
+2. 統合の許可が返された場合、2NNは改めてリクエストを送信する。
+3. リクエストを受信したNameNodeは、最新のEditsのログを2NNに転送する。
+4. 編集中のedits_inprogress_002は対象外です。複数のedits_001あるならすべて転送される。
+5. 2NNは、最新の2つのedits_001とFsimageをメモリに書き込んで統合し、新しいFsimage.chkpointファイルを生成する。
+6. 生成したFsimage.chkpointファイルをNameNodeに転送する。
+7. NameNodeは受け取ったFsimage.chkpoint名称を変更して元のFsimageファイルを上書きする。
 
-1. NameNodeにログローテートさせる最初の触発点がSecondary NameNodeからCheckPoint（検査点）をする必要かどうかをNameNodeに問う。
-2. 許可を得ったSecondary NameNodeがCheckPoint実行のリクエストを送信する。
-3. 指令をもらったNameNodeがEditsのログローテートを進行する。
-4. 最新の保存されたedits_inprogress_001とFsimageがSecondary NameNodeにダウンロードされる。
-5. edits_inprogress_001とFsimageがメモリに読み込まれる。
-6. edits_inprogress_001とFsimageがSecondary NameNodeのメモリに合併して新しいFsimageファイルを生み出します。一応Fsimage.chkpointと呼ぶ。
-7. Fsimage.chkpointファイルをコピーしてNameNodeへ転送する。
-8. Fsimage.chkpoint名称を改名して元のFsimageファイルを上書く。
-
-　　一つ完全のメタデータの維持流れが大体上記のようで、処理方法は難しくなくてかなり巧妙だと思います。第二次ログローテートするときにedits_inprogress_002を取ってだけ、Secondary NameNodeにの現存Fsimageを合併していいんです。
+　上記のようなSecondary NameNodeによるログ統合の一連の処理はCheckPointと呼ばれる。NameNodeのメタデータに関する更新処理の大部分は、Secondary NameNodeによって支持される
 
 ### 5.2　FsimageとEditsファイルの分析
 
-　　NameNodeサーバー`/opt/bigdata/servers/hadoop-2.9.2/data/tmp/dfs/name/current`目録にFsimageとEditsメタデータがあります。
+　NameNodeサーバー`../hadoop-2.9.2/data/tmp/dfs/name/current`目録にFsimageとEditsメタデータがある。
 
 ![image-20240715160949061](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240715160949061.png)
 
-- 最大数の結尾数`~225`のFsimageが最新で、そのに対して結尾数~225のEditsがログローテートしたの中に最新のです。
-- edits_inprogress_~00256名称ファイルが編集中のEditsで、まだFsimageに併せてない。
-- 複数のEdits内容が一括にFsimageに書き込みも可能です。
-- seen_txidには最新のEditsファイルの結尾数256を記録し、毎回起動してseen_txidの数値を通ってedits_inprogressファイルが紛失していないか確認する。
+- 末尾番号は225の`fsimage_00~0225`ファイルと、そのに対尾する`edits_00~0223-00~0225`のようなEditsログは、1セットの統合済みメタデータです。225までのEditsログは既に統合された。それ以降のEditsログはまだ処理しない。
+- `edits_inprogress_00~0256`というファイル名は、記録中のまだFsimageに統合されない。
+- 複数のEditsログファイルを纏めて一緒に統合するに限らない。更新内容を一括にEditsに書き込むことも見える。
+- seen_txidには最新のEditsファイルの結尾数256を記録し、毎回起動してseen_txidの数値によってどこまで統合されたことを確認する。
 - VERSIONにはクラスタの情報を記録する。
 
 ```

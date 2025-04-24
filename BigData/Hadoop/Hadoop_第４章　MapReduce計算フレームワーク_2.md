@@ -111,4 +111,3 @@ mapreduce.input.fileinputformat.split.minsize=64MB
 ![image-20250320161536287](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250320161536287.png)
 
 　赤枠にソースコード表れるのは`bytesRemaining` が `splitSize` (切片サイズ) の 1.1 倍より大きい場合にのみ、一つの切片として分割される。ならば129Mのファイルも一つのブロックに入れる。
-

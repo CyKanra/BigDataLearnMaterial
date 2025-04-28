@@ -1,235 +1,109 @@
-# 分散大規模データ処理システム -- Hadoop-4
+# 分散大規模データ処理システム -- Hadoop-3
 
-# 第３章　HDFSの分散ファイルシステム-2
+## 第３章　HDFSの分散ファイルシステム-2/4
 
-## 第４節　HDFSメタデータの管理仕組み
+### 第３節　HDFSの読み書き操作
 
-### 4.1　メタデータ管理の概説
+#### 3.1 HDFS読み込み流れ
 
-　メタデータは、HDFSに格納されたデータの様々な属性を記録するものです。例えば、データのサイズ、作成時刻、格納ディレクトリなど情報であり、言わば「スナップ写真」、或いは「管理目録」のような役割を果たす。
+　下の図は、ファイルを読み込んでダウンロードする流れを示しています。仮に、読み込み対象のファイルが200Mサイズであれば、128Mと72Mに分割され、少なくとも2つのブロックに格納されます。それでは、200MBのファイルの場合におけるHDFSでの具体的な読み込みの流れを説明しましょう。
 
-　データの更新する際には、メタデータ参照することで情報を素早く取得し、更新操作を実行することができる。もちろん、メタデータはデータ自身じゃなく、データとそのバックアップが全ての節点（DataNode）に失われてしまった場合、データの回復はできない。
+![061114_0923_LearnHDFSAB1](D:\OneDrive\picture\Typora\BigData\Hadoop\061114_0923_LearnHDFSAB1.webp)
 
-**Fsimage鏡像ファイル**：メタデータを保存するファイルで、ディスク上に保持されるため、電源が落ちてもデータが失われることはない。
+**step1**：クライアントがDistributed FileSystemのインスタンスを作成します（①）。このインスタンスはNameNodeにリクエストを送信し、対象データのブロック情報や関連するアドレスを取得します。これらの重要な情報がすべてメタデータとしてNameNodeによって管理されます。
 
-　ビッグデータを管理するFsimageファイルは、非常に大きなサイズになることがある。そのため、毎回更新記録をFsimageに反映すると処理が遅くなってしまった。
+**step2**：対象ファイルのブロックの情報、対応する副本情報、格納されるDataNode情報などをNameNodeのメタデータから取得します（②）。ブロック数量が多すぎる場合、一部分のブロック情報を先に返却されるという方式が選択られる可能性もあります。最後に、ファイルを完全な状態に復元するため、各ブロック情報は一定の順序で継ぎ合わせされます。
 
-　この問題を解決するために、メタデータの記録量と書込み速度のバランスを取る手法として、Editsログを導入されている。更新操作を個別に記録し、効率的に処理する。
+**step3**：FSDataInputStreamインスタンスを作成します（④）、その中のread()メソッドを呼び出して、ストリーム形式で対象節点に請求を発出し、ブロックデータを取得します。
 
-**Edits編集ログ**：全ての更新操作（新規、削除、改修など）を記録するログファイトです。その更新操作は先ずEditsファイルに書き込まれ、この書き込み処理はメモリ上で行う。 一定の量に蓄積されると、Editsの内容をFsimageに統合される。
+**step4**：200Mのファイルが128Mと72Mに分割されているため、少なくとも2回のDataNodeからブロックデータを獲得する流れが必要です。もちろん、各ブロックは複数の副本が存在するため、異なるDataNodeからデータも取得することも可能です。
 
-　　ディスク上のFsimageファイルと、メモリ上のEditsログを組み合わせることで、完全なメタデータが構成される。なお、ファイルを格納しているブロックの位置情報は、どちらにも記録されてない。Hadoop起動する時に各DataNodeから取得し、リアタイで最新の情報を読み込む。
+![image-20240424220112529](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240424220112529.png)
 
-## 第５節　NNと2NN
+　　どの節点を選択するかは、DataNodeの最短距離によって決まります。ここで言う「最短距離」とは、DataNode間のネットワーク上の距離を指します。例えば、同一サーバラック（server rack）内の節点に比べて他のサーバラック又はデータセンター（data center）が長くなります。ただ、そのサーバラック感知の機能が既定情況で閉じ、サーバラック感知策略に関する変数設定と脚本が必要です。ちょっと複雑なのでここで省きます。
 
-　メタデータの管理は、NameNodeとSecondaryNameNode2つの節点によって共同で行う。
+　　その最短距離の副本を選択の流れが実はstep2にも終わりました。つまり、最良のブロック情報が一つだけを返却されます。もし当のブロックの取得が何か理由に失敗したら、改めてNameNodeと通信を立てて新しいメタデータを取得します。故障DataNodeも標記された次のデータ読み込みで当のDataNodeを二度と使いません。
 
-**NameNode**：メタデータを保存するところ、クライアントからの要求を処理する。
+![image009](D:\OneDrive\picture\Typora\BigData\Hadoop\image009.jpg)
 
-**SecondaryNameNode**：NameNodeを補助し、FsimageとEditsを統合する役割を担当する。
+**step5**：一番目の128Mブロックを取得するのを完成したら（⑤）、連接を閉じて二つ目の72Mブロックの取得を続けます（⑥）。データ伝送の過程中にクライアントがPacket（64kB）の伝送基本単位としてブロックデータを受け、その同時にデータの検証も行っています。
 
-　本節では、メタデータの処理に関連するNameNode(NN)やSecondaryNameNode(2NN)の動作の仕組みや、メタデータの構造について紹介する。
+　　検証の最小の基本単位がChunk（512B）です。実際には、検証には4Bの検証値が含まれているため、Packetへの書き込みは516Bになります。データと検証値の比率は128:1であるため、128Mのブロックには1Mの検証ファイルが対応します。
 
-### 5.1　メタデータ管理の流れ
+　　戻り値不完全とかDataNode故障とか、当のDataNodeとの通信を直ぐに停止します。新しいブロックデータを取得するために上記の流れを繰り返させます。
 
-![OIP1](D:\OneDrive\picture\Typora\BigData\Hadoop\OIP1.jpg)
+**step6**：受けたブロックデータが先ず本地サーバにキャッシュされて、後で永続化にして実際ファイルに書き込みます。全てのブロック取得が終わったら、FSDataInputStreamインスタンスがclose()メソッドを呼び出してデータストリームを閉じて、NameNodeに通知していくことが必要ありません（➆）。
 
-NameNode(NN)部分：
-
-1. 初めてHadoopを起動する際には、初期化を行い、Fsimageファイルを新規作成する必要がある。それ以外の場合は通常通り起動し、NameNodeは最新のFsimageファイルを読み込む。
-2. クライアントから要求を受信する。
-3. NameNodeが変更操作のみを記録する。変更操作は先ずEditsファイルに追記される。ある程度記録が蓄積されると、編集中だったedits_inprogress_001ファイルがedits_001という名前で保存され、編集が終了した状態になる。そして、新たedits_inprogress_002ファイルを作成され、以後の更新記録はこのファイルに書き込まれる。このような一連の流れが、1回の完全の更新処理のサイクルとなる。
-
-Secondary NameNode(2NN)部分：
-
-1. Secondary NameNodeはNameNodeに対して、更新ログの統合作業が必要かどうかを問い合わせる信号を送信する。
-2. 統合の許可が返された場合、2NNは改めてリクエストを送信する。その統合可否の条件は設定できる。
-3. リクエストを受信したNameNodeは、最新のEditsのログを2NNに転送する。
-4. 編集中のedits_inprogress_002は対象外です。複数のedits_001あるならすべて転送される。
-5. 2NNは、最新の2つのedits_001とFsimageをメモリに書き込んで統合し、新しいFsimage.chkpointファイルを生成する。
-6. 生成したFsimage.chkpointファイルをNameNodeに転送する。
-7. NameNodeは受け取ったFsimage.chkpoint名称を変更して元のFsimageファイルを上書きする。
-
-　上記のようなSecondary NameNodeによるログ統合の一連の処理はCheckPointと呼ばれる。NameNodeのメタデータに関する更新処理の大部分は、Secondary NameNodeによって支持される
-
-### 5.2　FsimageとEdits
-
-　NameNodeサーバー`../hadoop-2.9.2/data/tmp/dfs/name/current`目録にFsimageとEditsメタデータがある。
-
-![image-20240715160949061](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240715160949061.png)
-
-- 末尾番号は225の`fsimage_00~0225`ファイルと、そのに対尾する`edits_00~0223-00~0225`のようなEditsログは、1セットの統合済みメタデータです。225までのEditsログは既に統合された。それ以降のEditsログはまだ処理しない。
-- `edits_inprogress_00~0256`というファイル名は、記録中のまだFsimageに統合されない。
-- Editsログは必ずしも1ファイルずつ統合されるわけではない。複数のEditsログファイル(243`〜`255)を合わせて一括にEditsに書き込むことも見える。
-- seen_txidファイルには、まだ処理されないEditsファイルの結尾数番号(256)を記録する。Hadoop起動する際、この値を元にどこまで統合が済んでいるかを確認する。
-- VERSIONには、クラスタに関するバージョン情報などの基本情報が保存されている。
-
-　 次VERSIONファイルの内容を紹介する。
+　　ここではHDFS読み込み流れが紹介し終わります。下記は流れのソースコードの展示で参考できます。
 
 ```
-cat VERSION
+@Test
+ public void testCopyToLocalFile() throws IOException, InterruptedException,　URISyntaxException{
+	Configuration configuration = new Configuration();
+ 	FileSystem fs = FileSystem.get(new URI("hdfs://centos01:9000"), configuration, "root");
+ }
+	fs.copyToLocalFile(false, new Path("/bigdata/test/hadoopTest.txt"), new 
+	Path("D:/hadoopTest.txt"), true);
+	fs.close();
+}
 ```
 
-![image-20240719162558943](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240719162558943.png)
+#### 3.2 HDFS書き込み流れ
 
-![image-20240719162620471](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240719162620471.png)
+　　HDFSの書き込み流れがちょっと複雑で、ここまだ200M目標ファイルを例をしてせめて二回のアップロード流れがあると説明しています。
 
-　**namespaceID**：namespaceとは、HDFSファイルシステムにおけるディレクトリ構造と空間の概念を指す。namespaceIDはその名前空間を対応する一意の識別子です。1つの節点が複数の名前空間に属することも可能です。
+![061114_0923_LearnHDFSAB2](D:\OneDrive\picture\Typora\BigData\Hadoop\061114_0923_LearnHDFSAB2.webp)
 
-　**clusterID**：HDFSクラスタ全体を識別するため一意のIDです。クラスタが初期化される際に自動的に生成され、すべての節点で共通して使用される。このIDを使って、この節点が本クラスタに属するかどうかを判断する。namespaceIDは複数設定可能ですが、clusterIDはクラスタごとに1つしか設定できない。
+**step1**：先ず依然クライアントがDistributed FileSystemのインスタンスを作成します（①）。このインスタンスはNameNodeに請求を発出して目標ファイルをアップロードする可否を確認します（②）。
 
-　**blockpoolID**：ブロックプール（Block Pool）とは、HDFSにおけるデータブロックの集合を意味する。blockpoolIDはこのブロックプールを一意に識別するIDであり、例えば、`BP-1480344265-192.168.31.135-1711003810821`のような形式で、NameNodeのIPアドレスと`cTime`初期化の時刻情報が含まれる。
+**step2**：NameNode がユーザーのファイル書き込みRPC要求を受け取ると、様々なチェックを実行します。例えば、ユーザーが関連する作成権限を持っているか、またそのファイルが既に存在しているかなどを確認します。これらのチェックに合格した場合、新しいファイルが作成され、その操作がトランザクションログに記録されます。
 
-- edits_inprogressとseen_txidを除いて、NameNodeとファイル結構は大体同じです。
+**step3**：アップロード許可を獲得した後でFSDataOutputStreamインスタンスを作成され、200M目標ファイルを幾つかのブロックに分割すると始めます。
 
-![image-20240716144751072](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240716144751072.png)
+　　書き込み流れが一括に全部ファイルを書き込むことではありません。1番目のブロックを分割されて出てから、対応の格納アドレスと副本アドレスを獲得して順序に各DataNodeにデータを発送したまでは、一つの連続、完全のアップロード流れです。前の終わりだ初めて、次の2番目のブロックのアップロード流れを始めて進行します。
 
-- 他の普通の節点がメタデータがない。
+　　その対応の格納アドレスを獲得する働きをDataStreamerから担当します（⑤）。読み込みと同じでブロックがパケット（packet）に分割される形式でData Queue隊列に格納されて目標のDataNodeに発送して行きます（④）。
 
-![image-20240716145030989](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240716145030989.png)
+　　副本の選択は読み込みと類似の放置策略があります。最初の副本はできるだけデータを書き込む節点に配置し、二番目の副本は最初のレプリカとは異なるラック（rack）にある節点に配置し、三番目の副本は二番目の副本と同じラックに配置します
 
-### 5.3　FsimageとEdits内容の分析
+**step4**：データを書き込む前に先ずクライアントのFSDataOutputStreamが各節点が正常かどうか確認します。クライアントは最前の1番目の節点に請求を発送し、クライアントに返却を受信すると1番目の節点の存在を確認しました。その後1番目の節点が2番目の節点に請求を発送します。正常に受信したの2番目の節点がクライアントに応答してあげます。最後の節点まで確認したと一つの完全の通信チャンネルが建てました。その通信チャンネルがData Pipelineとも呼ばれます（⑥）。
 
-　FsimageおよびEditsがすべて序列化される形式で保存されており、通常のテキストエディタでは内容を直接確認できない。Hadoop公式はこれを反序列化してXML形式で可視化する方法を提供している。
+　　もしその逐次の応答にある節点が故障かと判断したら、改めてNameNodeから新しい節点リストを獲得し、故障の節点が不可用マークを付けます。
 
-公式URL：[Apache Hadoop 2.9.2 – Offline Image Viewer Guide](https://hadoop.apache.org/docs/r2.9.2/hadoop-project-dist/hadoop-hdfs/HdfsImageViewer.html)
+**step5**：正式にブロックのアップロードが開始します（➆）。DFSOutputStreamはパケットをData Pipeline最初のDataNode節点へ書き込みます。最初の節点はパケットを受信して保存し、Data Pipelineにの次の節点にパケットを発送します。同様に、2番目の節点は受信してパケットを保存したら、それをData Pipelineの3番目の節点に書き込みます（⑧）。
 
-####  Fsimage
+　　最後のDataNode節点が正常に当のパケットを受信したら、前の発送者節点に成功の確認情報を返却します。逐次に前の節点に報告してクライアントのDFSOutputStreamが1番号の節点から返却信号を受信したまで、一つの完全の通信回路が形成されます（⑩）。
 
-　oivコマンドを使用することでFsimageファイルをXML形式に変換できる。
+　　パケットもDFSOutputStreamの内部に専門の応答隊列（ack queue）に維持することがあります。直ぐに各節点に発送られるパケットがこの応答隊列にData Queue隊列から転移します。FSDataOutputStreamが正常に返事を受信してack queueからそのパケットを削除します（⑨）。
 
-> oiv：Offline Image Viewer View a Hadoop fsimage INPUTFILE using the specified PROCESSOR,saving the results in OUTPUTFILE.
+**step6**：上記の様にパケット（packet）を単位として一つ一つで各節点に転送します。一つの完全のブロックがアップロードした初めて、クライアントがNameNodeに2番目のブロックのアクセスを請求します。残りの過程がstep4とstep5の流れを繰り返すんです。
 
-```
-cd /opt/bigdata/servers/hadoop-2.9.2/data/tmp/dfs/name/current
+　　なら、データ書き込みの過程でPipelineの中のあるDataNode節点が書き込みに失敗した場合はどうしますか。
 
-#Hadoopサービス停止状態でも実行でき
-hdfs oiv -p XML -i fsimage_0000000000000000253 -o /root/fsimageTest.xml
-```
+　　先ず、Pipelineのデータストリーム（Data Stream）が閉じられます。応答隊列（ack queue）にそのパケットをData Queue隊列に帰還して隊列の最前に追加します。パケットのデータ損失を防ぎます。
 
-![image-20240716160142940](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240716160142940.png)
+　　次、正常なDataNode節点に保存されたブロックのバージョンIDがアップグレードされます。これにより、故障のDataNode節点が一度正常に戻ったら不一致のバージョンIDをNameNodeに発見され、NameNodeが故障のDataNode節点に回復処理を行います。誤りバージョンIDにのデータを消除したり、不足の更新記録を追加したりすると節点の一致性を保証します。新しいバージョンIDの下に失敗した節点がPipelineから削除されます。
 
-![image-20240716160202722](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240716160202722.png)
+　　最後に、前の流れを続けて残りのデータをPipeline内の他の2つの節点に書き込みます。
 
-```
-#ローカルにダウンロード
-sz fsimageTest.xml
-```
+　　Pipeline内の複数の節点がデータ書き込みに失敗した場合でも、成功したブロックの数が `dfs.replication.min`（既定値1）に達すれば、書き込みは成功したと見なされます。その後、NameNodeはブロックを他のノードにコピーすると、副本数が`dfs.replication`設定値に達してまで処理を行います。
 
-![image-20240722165614346](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240722165614346.png)
+**step7**：一番目のブロックをアップロードが終了だと、DataStreamが再びNameNodeに請求を発出します。上記の操作を繰り返して全てのブロックを各節点に書き込む後は、クライアントclose()メソッドを呼び出してIOストリームを閉じます（⑪）。
 
-　Notepad++にXMLツールがあれば、XMLファイルを整形して表示する（Ctrl+Alt+Shift+B）。
+**step8**：NameNodeに知らせて書き込み流れが完成しました。NameNodeが今回のログとメタデータなどに最新の情報を書き込んで現在のデータを更新します。
 
-![image-20240722170324363](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240722170324363.png)
-
-　代替として、Linuxサーバー上で xmlstarlet ツールを利用し、XMLの検査・整形が可能です。
+　　ここではHDFS書き込み流れが紹介し終わります。下記は流れのソースコードの展示で参考できます。
 
 ```
-sudo yum install xmlstarlet
-```
-
-　もしインストール失敗したら、Centos7のyumの鏡像（mirror）ダウンロードアドレスが失効になったかもしれない。`/etc/yum.repos.d/CentOS-Base.repo`このファイルを新しい鏡像アドレスに変更し、依頼を改めてダウンロードしていい。
-
-解決の方法：[緊急対応！CentOS 7 サポート終了後のyumエラー解消法 #ShellScript - Qiita](https://qiita.com/owayo/items/81c843fb11d27b217433)
-
-```
-#既存依頼を消除
-sudo yum clean all
-
-#依頼をダウンロード
-sudo yum makecache
-```
-
-　次、xmlファイルを整形する。
-
-```
-xmlstarlet fo fsimageTest.xml > fsioutput.xml
-```
-
-![image-20240717164837672](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240717164837672.png)
-
-```
-cat fsioutput.xml
-```
-
-![image-20240724144054058](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240724144054058-1721799762791-1.png)
-
-- `<txid>`:`seen_txid` と一致するID値
-
-- `<INodeSection>`:メタデータ
-- `<inode>`:1つのファイルやディレクトリの状態
-- `<id>`：`<inode>`の一意な識別子
-- `<type>`：`<inode>`のタイプ、DIRECTORYまたはFILEなど。
-- `<name>`：HDFSにその対象の位置。
-- `<mtime>`：最終更新時刻（ミリ秒）
-- `<permission>`：所有者とアクセス権限
-
-　`<inode>`のtypeはFILE類の場合、`<block>`タブが付属し、hsfsTest.txtファイルに対応のブロック情報を持つ。ただ、ブロックの物理的な格納場所が記録されない。クラスタ起動時に、安全モード（safemode）に入り、各DataNodeが自身のブロック情報をNameNodeへ報告する。一定の間隔でブロック情報をNameNodeに送信し、正確な配置が把握される。
-
-![image-20240724162039062](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240724162039062.png)
-
-![image-20240724162208628](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240724162208628.png)
-
-　`<INodeDirectorySection>`はファイトとフォルダのディレクトリ構造（親子関係）を表す。`<parent>` と複数の `<child>` タグの数字は`<inode>`のidに対応する。
-
-![image-20240725143913777](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240725143913777-1721886036645-1.png)
-
-####  Edits
-
-　もっと分かりやすく説明するために、例を挙げて紹介する。
-
-```
-#フォルダを作成
-hdfs dfs -mkdir /EditsTest
-
-#ファイルを導入
-hdfs dfs -put /root/wordCountTest.txt /EditsTest
-```
-
-![image-20240725152414091](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240725152414091.png)
-
-　oevコマンドを使ってEditsファイルをXML形式に変換できる。
-
-> oev：Offline edits viewer Parse a Hadoop edits log file INPUT_FILE and save results in OUTPUT_FILE
-
-```
-cd /opt/bigdata/servers/hadoop-2.9.2/data/tmp/dfs/name/current
-
-hdfs oev -p XML -i edits_inprogress_0000000000000000289 -o /root/edits.xml
-```
-
-![image-20240725152646505](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240725152646505.png)
-
-```
-cat edits.xml
-```
-
-![image-20240725152927720](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240725152927720-1721889000826-3.png)
-
-　2回の更新操作は、赤枠のように示されている。1つ目の`<OPCODE>`タブには`OP_MKDIR`が書かれ、mkdirコマンドに対応してフォルダの作成操作を表す。2つ目に`OP_ADD`はファイルのアップロードを意味し、それぞれ異なる更新タイプに応じて適切なコードが記録されている。
-
-## 第６節　checkpoint周期
-
-　checkpointの周期は変更可変です。公式ではhdfs-default.xmlにある`dfs.namenode.checkpoint.period`引数で設定できると説明されている。しかし実際は、hdfs-default.xmlファイルが存在せず、これはあくまでデフォルト値の定義をまとめた仮想的なファイル名として使われる。本当に役立つのはhdfs-site.xmlファイルです。
-
-![image-20240726160229611](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240726160229611.png)
-
-　以下は、チェックポイントに関する2種類の設定例です。
-
-```
-<!-- 一時的な間隔でのチェックポイント設定（秒単位） -->
-<property>
-	<name>dfs.namenode.checkpoint.period</name>
-	<value>3600</value>
-</property>
-<!-- 100万件に達したらチェックポイント信号を送信 -->
-<property>
-	<name>dfs.namenode.checkpoint.txns</name>
-	<value>1000000</value>
-</property>
-<!-- 1分ごとに変更操作の有無を確認 -->
-<property>
-	<name>dfs.namenode.checkpoint.check.period</name>
-	<value>60</value>
-</property>
+@Test
+public void putFileToHDFS() throws IOException, InterruptedException, URISyntaxException {
+    Configuration configuration = new Configuration();
+    FileSystem fs = FileSystem.get(new URI("hdfs://centos01:9000"), configuration, "root");
+    FileInputStream fis = new FileInputStream(new File("D:/hadoopTest.txt"));
+    FSDataOutputStream fos = fs.create(new Path("/bigdata/test/hadoopTest.txt"));
+    IOUtils.copyBytes(fis, fos, configuration);
+    IOUtils.closeStream(fos);
+    IOUtils.closeStream(fis);
+    fs.close();
+}
 ```

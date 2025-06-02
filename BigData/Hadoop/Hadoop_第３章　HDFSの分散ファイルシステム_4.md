@@ -48,6 +48,8 @@ hdfs dfs -put /root/fsioutput.xml /EditsTest
 
 　制限を違反するエラーメッセージを返している。
 
+- 限定の解除
+
 ```
 #限定条件を検査
 hdfs dfs -count -q -h /EditsTest
@@ -99,6 +101,7 @@ hadoop archive -archiveName input.har –p /archiveTest /archiveOutput
 ![image-20240731113350041](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240731113350041.png)
 
 ```
+#出力フォルダを検査
 hdfs dfs -lsr /archiveOutput
 ```
 
@@ -166,9 +169,16 @@ hdfs dfs -ls /archive
 
 　処理中は、同じ構造を持つ2つのバッファが用意される。1つはbufferA、クライアントから更新記録を一時的に受け取り、メモリに格納する。1つはbufferB、すでに格納されたデータをディスクに書き出す役割を担う。
 
+具体的な流れ：
+
 - クライアントからの変更データを先ずbufferAに格納される。
 - 一方で、bufferBはその時点に蓄積のデータをディスクに書き出している。
 - ディスクに書き込みより、バッファリングの処理は早く上限に至って停止になる。そのため、bufferAはロックされる状態になってbufferBの転送が終わるまで待っている。
 - bufferBの転送が終わったら、bufferAとbufferBを取り替え、待機中のスレッドが起こされてbufferBへ更新記録を書き込む。bufferAにいる更新記録ディスクへ書き込む。
 
-　
+　上記のようにして、HDFS高負荷並行処理は並行性と効率を両立しながら更新ログの記録処理を実現している。
+
+## おわりに
+
+　ここまでで、HDFSに関する説明は終了です。基礎的な内容としては一通りカバーできたかと思います。
+　次の章では、Hadoopの三大組合せの「MapReduce」について解説します。よろしくお願いします。

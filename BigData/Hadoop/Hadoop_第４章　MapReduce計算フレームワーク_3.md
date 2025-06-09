@@ -12,13 +12,13 @@
 
 **Copy段階**
 
-- MapTaskからデータを取得して先ずバッファに書き込む。一定閾値に達してまだディスクに転送する。Spillに似る流れである。
-- MapTaskにのデータは同じの余りを持つ`<key：単語/value：単語数>`を集めてパーティションがあるデータです。なお、そのデータはMapTask流れにもう並び替えられてあった。
-- 1つのReduceTaskは同じのパーティション番号のみを取得する。例えば、各MapTaskのpartition0はReduceTask1に集まる。ReduceTask数とMapTask数が同じです。
+- MapTaskからデータを取得して先ずバッファに書き込んでおく。一定閾値に達してまだディスクに転送する。Spillに似る流れである。
+- MapTaskにのデータは同じの余りを持つ`<key：単語/value：単語数>`を集めるパーティションであるデータです。なお、そのデータはMapTask流れにもうkeyで並び替えられてあった。
+- 図にのpartition0、partition1はReduceTask数で決まっている。そのReduceTask数はコード層に設定できる。ロジックは<key：単語/value：単語数>をReduceTask数に割ると同じ余りを持つの値で仕切られるのが一様ですけど、MapTaskとは異なる流れです。
 
-　ここにMapReduceにとって1つの重要な特性が見える。ロジックサイズを切片（spill）サイズに割ると複数のMapTaskをなすから、MapTaskにデータはMapTask数に割るとパーティションをなすまで、あと同じ番号のパーティションはReduceTaskに収集され、その流れにMapTask数、パーティション数、ReduceTask数は同じです。最初のMapTask一旦決まったら最後までその並行度で動いている。MapReduceの実行方案はその特性に合うかどうかは効率にかなり影響してくる。一方的に並行度を増加すると逆に効率的じゃなくなる。
+- 上図のようにReduceTask数とMapTask数を一致にする場合、MapTaskのパーティション結果とReduceTaskのパーティション結果が同じになる。各MapTaskにのpartition0が何も変わってなく全てReduceTask1に入れる。
 
-　Hadoopに「分割」と「併合」概念はかなり重要で、その「分割」の仕組みは上記の流れに体現できる。
+- デフォールトでReduceTask数は1です。その場合、partition0だけあって全てReduceTaskに入れる。
 
 **Merge段階**
 
@@ -27,3 +27,6 @@
 **Sort段階**
 
 　併合したデータを`<key：単語, value：単語数>`のkey値で並び替える。
+
+**Reduce段階**
+

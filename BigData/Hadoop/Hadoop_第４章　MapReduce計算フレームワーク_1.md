@@ -22,35 +22,51 @@ MapReduceの処理流れは、以下の2段階に分けている：
 
 ![Hadoop - Architecture - GeeksforGeeks](D:\OneDrive\picture\Typora\BigData\Hadoop\mapreduce-workflow.png)
 
-## 第２節　WordCount案例の分析
+## 第２節　WordCount公式案例にいて
 
-　公式の案例で、文字の単語出現回数を数えて統計する機能です。`hadoop-mapreduce-examples-2.9.2.jar`パッケージが`/opt/bigdata/servers/hadoop-2.9.2/share/hadoop/mapreduce`ディレクトリにいます。
+　MapReduceの基本的な処理モデルを理解するために、文字列中の単語の出現回数を数えて統計するWordCount案例を紹介する。
+
+　この機能は公式のサンプルはパッケージ`hadoop-mapreduce-examples-2.9.2.jar`に含まれる。通常`/opt/bigdata/servers/hadoop-2.9.2/share/hadoop/mapreduce`ディレクトリにいる。
 
 ![image-20240808152733378](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240808152733378.png)
 
-　HadoopサービスからダウンロードしてIdeaに導入します。WordCountクラスは目標ファイルです。
+　このJarファイルをHadoopサービスからダウンロードし、Ideaに導入して利用することができる。WordCountクラスはその実行ロジックである。
 
 ![image-20240808153229676](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240808153229676.png)
 
-　WordCountコードは三つの部分に分けます。
+　WordCountコードは、以下の3つの主要部分で構成されている。
 
-- Map：分割流れに対応して、Mapper親クラスを継承して親クラスのmapメソッドを書き直す必要です。Map階段のロジックがここに書きます。
+**Map階段**
+
+- Mapper親クラスを継承して親クラスのmapメソッドを書き直して分割ロジックを記述する。
 
 ![image-20240808160200736](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240808160200736.png)
 
-　入力値keyが一行文字のオフセット（offset）で、一応行数を理解していい、特に使われていません。入力値valueが一行文字の内容です。大体のロジックは、mapメソッドが一行文字を受けて空白で仕切りを行います。複数の単語を含める結果値`itr`がループ処理をします。一つ一つ単語を「<単語, 出現回数=1>」形式で`context`に書き込みます。
+- 入力値keyが1行文字のオフセット（offset）で、行数と理解していい、特に使われてない。
+- 入力値valueがその行の文字列内容です。
 
-- Reduce：統合流れに対して、Reducer親クラスを継承して親クラスのreduceメソッドを書き直す必要です。Reduce階段のロジックがここに書きます。
+- ロジックとしては、1行の文字列を空白で分割し。複数の単語を含める結果値`itr`がループ処理をする。単語ごとに`<key：単語, value：出現回数=1>`形式で`context`に書き込む。
+
+**Reduce階段**
+
+- Reducer親クラスを継承して親クラスのreduceメソッドを書き直す統合処理のロジックを記述する。
 
 ![image-20240811153315099](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240811153315099.png)
 
-　入力値keyがMap階段から出力のkey値で、key値ごとが一種の単語を表示します。valuesがMapから送られてきた出現回数のリストです。key値に対してvaluesが`[1,3,2]`ようなデータリストです。リストの各数字は、その行にその単語が出現した回数を表します。values総合と対応のkey値が＜key, value+＞形で`context`に書き込みます。
+- 入力値keyがMap階段から出力のkey値で、valuesがその単語に対応する出現回数の反復子（Iterable）です。例えば、`[1,1,1]`と理解していい。
 
-- Driver：タスクを運行するコードです。配置クラスの実装と入力値のチェック、Job対象の設定、入力と出力ファイルのアドレスと最後のJobタスクの実行という部分があります。
+　何で反復子には1で、それはMapメソッドに`<key：単語, value：出現回数=1>`を出力するため、`<key,1>`を収集してvalues集合をなして反復子に入れる。
+
+- 単語keyに対応する総数`＜key：単語, sum：総数＞`形で`context`に入れる。最後に出力結果をファイルに書き込む。
+
+**Driver**
+
+- 主プロセス。配置の実装、Job対象の設定、入力と出力ファイルのアドレスの添加と、最後のJobタスクの実行などをまとめて定義する。
+- 最後に `job.waitForCompletion(true)` を呼び出すんで、MapReduceジョブの実行が開始される。
 
 ![image-20240812165236008](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240812165236008-1723449222995-1.png)
 
-　MapReduceコーディングには、開発者がMap分割とReduce統合のロジックを関心するだけでいい、どうやって分割、統合内容を考慮する必要ありません。
+　MapReduce開発では、開発者が主にMapメソッドとReduceメソッドのロジック実装に集中すればよく、データの分割や統合処理の詳細な過程はフレームワーク側が自動的に処理し、触れることは必要ない。
 
 ## 第３節　手動的にWordCount機能を実現
 

@@ -13,20 +13,36 @@
 **Copy段階**
 
 - MapTaskからデータを取得して先ずバッファに書き込んでおく。一定閾値に達してまだディスクに転送する。Spillに似る流れである。
-- MapTaskにのデータは同じの余りを持つ`<key：単語/value：単語数>`を集めるパーティションであるデータです。なお、そのデータはMapTask流れにもうkeyで並び替えられてあった。
-- 図にのpartition0、partition1はReduceTask数で決まっている。そのReduceTask数はコード層に設定できる。ロジックは<key：単語/value：単語数>をReduceTask数に割ると同じ余りを持つの値で仕切られるのが一様ですけど、MapTaskとは異なる流れです。
+- MapTaskにのデータは同じの余りを持つ`<key：単語/value：単語数>`を集めるパーティションであるデータです。なお、そのデータはMapTask流れにもうkeyで並べ替えられてあった。
+- 図にのpartition0、partition1はMapTask数で決まっている。ReduceTask数はコード層に設定でき、MapTask数とは関係ない。ロジックは<key：単語/value：単語数>をReduceTask数に割ると同じ余りを持つの値で仕切られるのが類似けど、MapTaskとは異なる流れです。
 
-- 上図のようにReduceTask数とMapTask数を一致にする場合、MapTaskのパーティション結果とReduceTaskのパーティション結果が同じになる。各MapTaskにのpartition0が何も変わってなく全てReduceTask1に入れる。
+- 上図のようにReduceTask数とMapTask数を一致にする場合、MapTaskのパーティション結果とReduceTaskのパーティション結果が同じになる。各MapTaskにのpartition0が何も変わってなく全てReduceTask1に入れる。partition1はReduceTask2に入れる。
 
-- デフォールトでReduceTask数は1です。その場合、partition0だけあって全てReduceTaskに入れる。
+- デフォールトでReduceTask数は1です。その場合、partition0、partition1は全てReduceTaskに入れる。でも、各MapTaskにのpartition0を先に収集し、次は全てのpartition1を収集するという過程が不変です。
 
 **Merge段階**
 
-　Copy段階収集されるデータを併合する。
+　Copy段階収集されるデータを統合する。例えば、各MapTaskから収集されるpartition0を1つ大きなpartition0になる。
 
 **Sort段階**
 
-　併合したデータを`<key：単語, value：単語数>`のkey値で並び替える。
+　統合されたデータを`<key：単語, value：単語数>`のkey値で並べ替える。
 
 **Reduce段階**
+
+　Reduce段階のロジックはReduceメソッドに書いているものです。もしReduceTask数は1で、全てのデータがReduceTaskに収まている。Reduceメソッドに入力するを準備する。
+
+![image-20250612072933416](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250612072933416.png)
+
+　一気に全体的なデータをReduceメソッドに渡すことじゃない。keyごとに1回ずつReducerメソッドが呼ばれ、`Iterable<value>`が渡されて処理する。最後にHDFSファイルに結果を出力する。
+
+　ReduceTask数は1なので、HDFSにの結果ファイルはpart-r-00000だけである。
+
+![image-20240820074437964](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240820074437964.png)
+
+![image-20240820074843969](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240820074843969.png)
+
+### 7.3　ReduceTask並行度
+
+### 7.4　Shuffle仕組み
 

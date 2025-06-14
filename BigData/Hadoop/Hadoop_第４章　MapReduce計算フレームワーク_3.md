@@ -44,5 +44,15 @@
 
 ### 7.3　ReduceTask並行度
 
+　Reduce統合の流れに並行度の概念もある。MapTaskの並行度は切片で決まると違い、ReduceTask数量は手動的に設定できる。
+
+```
+ #3に設定する
+ job.setNumReduceTasks(3);
+```
+
+-  ReduceTask=0場合は、 Reduce段階がないと表示する。出力ファイル数とMapTask数が一致になっている。
+- ReduceTask=1はデフォルト値、出力ファイルは1つだけ。上の案例は1つファイルを出力する。
+
 ### 7.4　Shuffle仕組み
 

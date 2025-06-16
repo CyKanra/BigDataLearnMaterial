@@ -70,42 +70,33 @@ MapReduceの処理流れは、以下の2段階に分けている：
 
 ## 第３節　手動的にWordCount機能を実現
 
-　MapReduceコーディングの規範に従って自らWordCount機能のプログラムを実現します。IdeaツールでMavenプログラムを新作してMapper，Reducer，Driverコーディングをします。
+　MapReduceコーディング基本規範に従い、自分でWordCount機能を実現する。
+
+　IntelliJ IDEA などの開発ツールを使ってMavenプロジェクトを新規作成し、Mapper，Reducer，Driverの各クラスをコーディングする。
 
 **実現目標**
 
-　指定のコンテストにの単語の出現回数を統計します。
-
-入力ファイル：wc.txt
-
-出力ファイル：大体下記のようです
-
-```
-Bigdata	2
-Fink	3
-HBase	2
-Hive	2
-```
+　コンテストに単語の出現回数を統計し、結果を出力する。
 
 **環境準備**
 
 - HADOOP_HOME環境変数の設定
 
-　hadoop-2.9.2インストールパッケージがダウンロードして、あるディレクトリに置いて解凍を実行します。
+　hadoop-2.9.2インストールパッケージがダウンロードし、任意のディレクトリに置いて解凍する。
 
-hadoop-2.9.2アドレス：[Apache Hadoop](https://hadoop.apache.org/release/2.9.2.html)
+hadoop-2.9.2URL：[Apache Hadoop](https://hadoop.apache.org/release/2.9.2.html)
 
 ![image-20240815140854345](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815140854345.png)
 
-　win10システムなら`Environment variables`を検索して環境変数の設定画面が出ています。下の`System variables`に`HADOOP_HOME`と`E:\Program Files\hadoop-2.9.2`新規をします。
+　winOSの場合、`Environment variables`（環境変数）を検索して設定画面を開く。下の`System variables`に`HADOOP_HOME`と`E:\Program Files\hadoop-2.9.2`引数を追加する。
 
 ![image-20240815141111477](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815141111477.png)
 
-　次は、`System variables`に`Path`選択肢に入って`%HADOOP_HOME%\bin`アドレスを追加します。
+　次は、`System variables`に`Path`選択肢に入って`%HADOOP_HOME%\bin`値を追加する。
 
 ![image-20240815141210278](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815141210278.png)
 
-　`D:\InstallPackage\hadoop-2.9.2\etc\hadoop\hadoop-env.cmd`ファイルにJAVA_HOMEアドレスを追加します。
+　`D:\InstallPackage\hadoop-2.9.2\etc\hadoop\hadoop-env.cmd`ファイルにJAVA_HOMEアドレスを追記する。　
 
 ![image-20240815141430567](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815141430567.png)
 
@@ -117,7 +108,7 @@ hadoop version
 
 ![image-20240815141607264](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815141607264.png)
 
-> HADOOP_HOMEのアドレスにもhadoop-env.cmdファイルのJAVA_HOMEにも、スペースが許さない。JAVA_HOMEに対してのアドレスが存在する限り、環境変数にのJAVA_HOMEと不一致にしても構わない。
+　`HADOOP_HOME`とhadoop-env.cmdファイルの`JAVA_HOME`パスはスペースが許さない。そのため新たにJDK をインストールする。`JAVA_HOME`指定先JDKに実際に存在する限り、環境変数にのJAVA_HOMEと不一致にしても構わない。
 
 **コーディング**
 
@@ -141,7 +132,7 @@ hadoop version
 </dependency>
 ```
 
-- Mapper階段
+- Mapper部分
 
 ```
 import org.apache.hadoop.io.IntWritable;
@@ -169,7 +160,7 @@ public class WordCountMapper extends Mapper<LongWritable, Text, Text, IntWritabl
 }
 ```
 
-- Reducer階段
+- Reducer部分
 
 ```
 import org.apache.hadoop.io.IntWritable;
@@ -194,7 +185,7 @@ public class WordCountReducer extends Reducer<Text, IntWritable, Text, IntWritab
 }
 ```
 
-- Driver階段
+- Driver部分
 
 ```
 import java.io.IOException;
@@ -232,17 +223,17 @@ public class WordcountDriver {
 }
 ```
 
-**プログラム運行（ローカル）**
+**プログラムの実行（ローカル環境）**
 
-- プログラムを運行
+- プログラムの配置
 
-　ここでローカル運行を選べて分散サービスを依頼しません。入力と出力ファイルのアドレス引数をprogram arguments欄に添加します。因みに、出力アドレスが必ず存在しません。
+　今回の実行はローカルモードで行い、分散サービスを依頼しない。入力と出力ファイルのパスを引数としてmainメソッド入力値に添加する。
 
 ![image-20240814150354113](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240814150354113.png)
 
 ![image-20240816095735458](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240816095735458.png)
 
-　wc.txt内容が下記です。
+　下記はwc.txt内容です。
 
 ```
 hadoop Zookeeper Hive mapreduce yarn HBase
@@ -255,11 +246,11 @@ HBase Zookeeper Spark Fink
 
 - 環境の配置
 
-　その前にWindows環境の下で`D:\InstallPackage\hadoop-2.9.2\bin`にwinutils.exe、hadoop.dllというファイルが必要です。お勧め方法がネットから標準のをダウンロードしてローカルを上書きします。
+　Windows環境で`D:\InstallPackage\hadoop-2.9.2\bin`にwinutils.exe、hadoop.dll2つのファイルが必要です。お勧め方法はGitHubから正しいbinフォルダをダウンロードしてローカルを上書きする。
 
 ダウンロードURL：[GitHub - cdarlint/winutils: winutils.exe hadoop.dll and hdfs.dll binaries for hadoop windows](https://github.com/cdarlint/winutils)
 
-　需要のディレクトリだけをダウンロードしてほしいと、`Git Bash here`を開けて下記のコマンドを入力します。
+　ダウンロード対象のディレクトリに移動し、`Git Bash here`を開けて下以下のコマンドを実行する。
 
 ![image-20240816100042378](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240816100042378.png)
 
@@ -267,10 +258,9 @@ HBase Zookeeper Spark Fink
 git clone --no-checkout https://github.com/cdarlint/winutils.git
 #或いは
 git clone --no-checkout https://github.com/cdarlint/winutils.git <ローカルディレクトリ>
-
 #最上層のディレクトリに入って
 cd winutils
-
+#指定ディレクトリダをウンロード
 git sparse-checkout init --cone
 
 git sparse-checkout set hadoop-2.9.2/bin
@@ -280,25 +270,29 @@ git checkout
 
 ![image-20240815162659093](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815162659093.png)
 
-　下図にのbinディレクトリを`D:\InstallPackage\hadoop-2.9.2`に上書きします。
+　取得した`hadoop-2.9.2\bin` フォルダ内のファイルを`D:\InstallPackage\hadoop-2.9.2`にコピーして上書きする。
 
 ![image-20240815163522007](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815163522007.png)
 
-- WordcountDriverを運行
+- WordcountDriverの実行
 
 ![image-20240815163842771](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815163842771.png)
 
-　全て順調にしたら上図のように成功になります。下図の二つはwinutils.exe、hadoop.dll欠いてのエラーメッセージで、参考とできます。
+　すべての設定が正しく完了していれば、上図のように正常終了するはずです。
+
+　下図はwinutils.exe、hadoop.dll欠いてのエラーメッセージです。
 
 ![image-20240815144525696](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815144525696.png)
 
 ![image-20240815160024111](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815160024111.png)
 
-- `D:\output`結果の検査
+- `D:\output`結果の確認
 
 ![image-20240816095655450](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240816095655450.png)
 
-- part-r-00000結果ファイルを開けて下図のように表れる
+　二度と実行すれば、このフォルダを空きにする必要です。
+
+- part-r-00000結果ファイルを開くと下図のように単語とその出現回数が1行ずつ表示されている。
 
 ![image-20240816095901152](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240816095901152.png)
 
@@ -306,9 +300,11 @@ git checkout
 
 - 分散式サービスの準備
 
-　第２章にHadoopのテストを真似てサービスに運行するつもりです。その前に`/wcoutput`の全てを消除しておく必要です。
+　Hadoopサービスを実行する。出力先のディレクトリ `/wcoutput` にファイルが既に存在している場合は、事前に削除しておく必要がある。
 
 ![image-20240816152923496](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240816152923496.png)
+
+　ウェブ上で削除することはでき、対象ディレクトリへの権限を付与しておく。
 
 ```
 #そのディレクトリに権限を与える
@@ -317,23 +313,23 @@ hdfs dfs -chmod -R 777 /
 
 ![image-20240816153712200](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240816153712200.png)
 
-　エラーメッセージまだあるけれど、実際に消除できます。
+　エラーメッセージまだあるけど、実は消除した。
 
 ![image-20240816153516317](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240816153516317.png)
 
 - プログラムをパッケージ化にする
 
-　ネット上で色々方法を紹介してあります。ここでIdeaツールを使ってパッケージ化にします。図の右側サイドバーMavenを開けてpackage選択肢をダブルクリックするとパッケージ化を進行し始めます
+　IntelliJ IDEAツールを使い、右側のMavenを開けてpackage選択肢をダブルクリックすると、プロジェクトがビルドされ、JAR ファイルが生成される。
 
 ![image-20240820063405560](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240820063405560.png)
 
 ![image-20240820063513855](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240820063513855.png)
 
-　プログラムの下にtargetディレクトリにパッケージがあります。
+　プログラムの下にtargetディレクトリにパッケージがある。
 
 ![image-20240820070613455](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240820070613455.png)
 
-　もし全てのコードをパッケージ化にしたくないなら、Mavenパッケージ化のプラグイン配置に下の内容を添加します。
+　もし全てのコードをパッケージ化にしたくない、プラグイン配置に下の内容を添加して指定のクラスのみをパッケージ化できる。
 
 ```
 <plugins>
@@ -351,7 +347,7 @@ hdfs dfs -chmod -R 777 /
 
 ![image-20240820072208378](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240820072208378.png)
 
-　`rz`コマンドを入力してパッケージをアップロードします。
+　`rz`コマンドを入力してパッケージをアップロードする。
 
 ![image-20240820071555383](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240820071555383.png)
 
@@ -365,9 +361,11 @@ hadoop jar JavaPractice-1.0.0-SNAPSHOT.jar com.javapractice.hadoop.WordCountDriv
 
 ![image-20240820074348930](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240820074348930.png)
 
+　ウェブに出力結果を見える。
+
 ![image-20240820074437964](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240820074437964.png)
 
-　画面に出力内容が出ました。`http://192.168.31.135:19888/jobhistory`に入って対応のタスクログがあります。
+　`http://192.168.31.135:19888/jobhistory`に入って対応のタスクログが確認できる。
 
 ![image-20240820074706094](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240820074706094.png)
 
@@ -382,18 +380,20 @@ hdfs dfs -cat /wcoutput/part-r-00000
 
 ## 第４節　Hadoopの直列化
 
-　直列化は、ネットワーク通信でデータを送信したり、オブジェクトをファイルに永続化したりする際に、送信効率、格納空間など考えてオブジェクトをバイナリ構造に変換する過程です。
+### 4.1　Hadoopの直列化とは
 
-　先紹介したWordcount案例が、MapperクラスやReducerクラスには自分の独自の直列化型があり、例えばIntWritable、longWritable型がありますが、それらの型は一般的なJavaの基本型ではありません。
+　直列化は、ネットワーク通信でデータを送信したり、対象をファイルに永続化したりする際に、送信効率や保存容量などを考慮して、対象をバイナリ形式に変換する処理です。
 
- 　なぜHadoopはJava標準のSerializableを使わずに独自の直列化の形式を選んだのか？Hadoopでは、クラスター内の複数の節点間のプロセス通信がRPC（Remote Procedure Call）を通じて実現されます。RPCはメッセージを直列化にしてバイナリストリームに変換し、それをリモート節点に送信します。リモート節点は受信したバイナリデータを逆直列化して元のメッセージに戻します。そのため、RPCは以下のような特徴を追求します：
+　Hadoopでは、Java標準のSerializableを使用せず、独自の直列化クラスを採用している。例えば、Wordcount案例にIntWritable、longWritableクラスが使用される。
 
-- **コンパクト**: データがよりコンパクトになり、ネットワーク帯域を効率的に利用できる。
-- **高速性**: 直列化と逆直列化の性能負荷が低い。
+　この理由は、クラスター内の節点の間通信がRPC（Remote Procedure Call）を通じて行う。RPCでは、メッセージを直列化にしてバイナリストリームに変換し、リモート節点に送転送する。リモート節点は受信してバイナリデータを逆直列化にして元の対象に復元する。その過程は、以下の特性が特に重要です：
 
-　Hadoopは、独自のシリアライズ形式であるWritableを使用しており、これはJavaのシリアライズ形式であるSerializableよりもコンパクトで高速です。Serializableを使ってオブジェクトを直列化にすると、検証情報、ヘッダー、継承体系などの多くの追加情報が付加されます。
+- **コンパクト性**: 直列化されたデータがコンパクトであるほど、ネットワーク帯域を効率よく活用できる。
+- **高速性**: 直列化／逆直列化処理にかかる計算コストが低い。
 
-　Hadoopにの基本データ類型とJava伝統基本類型の対照表。
+　一方、JavaのSerializableを使用した場合、検証情報、ヘッダー、継承構造など不要な情報が付加されて不利となる。
+
+　次に、Hadoopにの基本データ型とJavaの基本型の対応表。
 
 | Java類型 | Hadoop Writable類型 |
 | -------- | ------------------- |
@@ -407,9 +407,11 @@ hdfs dfs -cat /wcoutput/part-r-00000
 | map      | MapWritable         |
 | array    | ArrayWritable       |
 
-## 第５節　直列化インターフェース
+### 4.2　直列化インターフェース実装
 
-　Haddoop内部がHaddoop自分のデータ類型によって通信します。もしBean対象をHadoopに渡してBean対象が必ずWritableインターフェースを実装します。
+　Hadoopでは、独自のデータ型を使用して処理を行う。そのため、JavaのBeanオブジェクトをHadoop内で利用するには、Writableインターフェースの実装が必須となる。
+
+　以下は、実装案例です。
 
 ```
 public class Student implements Writable {
@@ -434,4 +436,4 @@ public class Student implements Writable {
 }
 ```
 
-　Bean実体がWritableインターフェースを実装して二つ直列化write()と逆直列化readFields()メソッドが上書きする必要です。直列化と逆直列化の類型の扱いが必ず一致にします。後は、String類型の直列化がwriteUTF()メソッドに対応し、writeString()みたいメソッドがありません。
+　Writableインターフェースを実装する時は、直列化`write()`と逆直列化`readFields()`メソッドを上書きしなければならない。あと、直列化と逆直列化メソッドにデータ型も一致にする必要です。String型の直列化が`writeUTF()`メソッドで、`writeString()`のようなメソッドがない。その2点を注意が必要です。

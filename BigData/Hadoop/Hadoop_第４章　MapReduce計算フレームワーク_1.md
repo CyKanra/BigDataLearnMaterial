@@ -1,6 +1,6 @@
 # 分散大規模データ処理システム -- Hadoop-5
 
-# 第４章　MapReduce計算フレームワーク-1/3
+# 第４章　MapReduce計算フレームワーク-1
 
 　本章に入る前に、まずはMapReduceの利用状況について少し触れておく。
 
@@ -96,11 +96,11 @@ hadoop-2.9.2URL：[Apache Hadoop](https://hadoop.apache.org/release/2.9.2.html)
 
 ![image-20240815141210278](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815141210278.png)
 
-　`D:\InstallPackage\hadoop-2.9.2\etc\hadoop\hadoop-env.cmd`ファイルにJAVA_HOMEアドレスを追記する。　
+　`D:\InstallPackage\hadoop-2.9.2\etc\hadoop\hadoop-env.cmd`ファイルにJAVA_HOMEアドレスを追記する。
 
 ![image-20240815141430567](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815141430567.png)
 
-　Hadoopサービスをwinにインストールするかどうか確認します。
+　Hadoopサービスをwinにインストールするかどうか確認する。
 
 ```
 hadoop version
@@ -437,3 +437,8 @@ public class Student implements Writable {
 ```
 
 　Writableインターフェースを実装する時は、直列化`write()`と逆直列化`readFields()`メソッドを上書きしなければならない。あと、直列化と逆直列化メソッドにデータ型も一致にする必要です。String型の直列化が`writeUTF()`メソッドで、`writeString()`のようなメソッドがない。その2点を注意が必要です。
+
+
+
+　MapReduceについての基本的な理解は、ここまででおおよそ得られたかと思います。
+ 　次の章では、MapReduceの内部的な実行の仕組みについて解説していきます。

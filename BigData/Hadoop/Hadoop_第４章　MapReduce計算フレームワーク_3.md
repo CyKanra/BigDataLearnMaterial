@@ -14,11 +14,13 @@
 
 - MapTaskからデータを取得して先ずバッファに書き込んでおく。一定閾値に達してまだディスクに転送する。Spillに似る流れである。
 - MapTaskにのデータは同じの余りを持つ`<key：単語/value：単語数>`を集めるパーティションであるデータです。なお、そのデータはMapTask流れにもうkeyで並べ替えられてあった。
-- 図にのpartition0、partition1はMapTask数で決まっている。ReduceTask数はコード層に設定でき、MapTask数とは関係ない。ロジックは<key：単語/value：単語数>をReduceTask数に割ると同じ余りを持つの値で仕切られるのが類似けど、MapTaskとは異なる流れです。
+- 図にのpartition0、partition1はMapTask数で決まっているじゃなく、ReduceTask数によって生まれる。
 
-- 上図のようにReduceTask数とMapTask数を一致にする場合、MapTaskのパーティション結果とReduceTaskのパーティション結果が同じになる。各MapTaskにのpartition0が何も変わってなく全てReduceTask1に入れる。partition1はReduceTask2に入れる。
+- ReduceTask数はコード層に設定でき、MapTask数とは関係ない。ロジックは<key：単語/value：単語数>をReduceTask数に割ると同じ余りを持つの値で仕切られるのが類似けど、MapTaskとは異なる流れです。
 
-- デフォールトでReduceTask数は1です。その場合、partition0、partition1は全てReduceTaskに入れる。でも、各MapTaskにのpartition0を先に収集し、次は全てのpartition1を収集するという過程が不変です。
+- 上図のようにReduceTask数とMapTask数を一致にする場合、MapTaskのパーティション結果とReduceTaskのパーティション結果が同じになる。どっちがkey値をTask数に割ると余りによってパーティションを生成する。同じパーティションが1つのReduceTaskに入れる。例えば、図の表示するように各MapTaskにのpartition0が全てReduceTask1に入れる。partition1はReduceTask2に入れる。
+
+- デフォールトでReduceTask数は1です。その場合、全てのデータがpartition0に属し、ReduceTaskに入れる。
 
 **Merge段階**
 
@@ -56,3 +58,4 @@
 
 ### 7.4　Shuffle仕組み
 
+　Copy段階からReduceTaskへ転送する過程がShuffleと呼ばれる。

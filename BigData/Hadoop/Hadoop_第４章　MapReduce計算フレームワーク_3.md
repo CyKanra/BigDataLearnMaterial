@@ -14,9 +14,14 @@
 
 - MapTaskからデータを取得して先ずバッファに書き込んでおく。一定閾値に達してまだディスクに転送する。Spillに似る流れである。
 - MapTaskにのデータは同じの余りを持つ`<key：単語/value：単語数>`を集めるパーティションであるデータです。なお、そのデータはMapTask流れにもうkeyで並べ替えられてあった。
-- 図にのpartition0、partition1はMapTask数で決まっているじゃなく、ReduceTask数によって生まれる。
+- ただ、図にのpartition0、partition1はMapTask数で決まっているじゃなく、ReduceTask数によって生まれる。ここMapTaskからパーティション状態を保って直接にReduceTaskに転送すると誤解しやすい
 
-- ReduceTask数はコード層に設定でき、MapTask数とは関係ない。ロジックは<key：単語/value：単語数>をReduceTask数に割ると同じ余りを持つの値で仕切られるのが類似けど、MapTaskとは異なる流れです。
+- ReduceTask数はコード層に設定でき、MapTask数とは関係ない。ロジックは<key：単語/value：単語数>をReduceTask数に割り、同じ余りを持つの値で仕切られて同じパーティションに入れると類似けど、実はMapTaskとは2つの流れです。
+
+
+```
+ job.setNumReduceTasks(3);
+```
 
 - 上図のようにReduceTask数とMapTask数を一致にする場合、MapTaskのパーティション結果とReduceTaskのパーティション結果が同じになる。どっちがkey値をTask数に割ると余りによってパーティションを生成する。同じパーティションが1つのReduceTaskに入れる。例えば、図の表示するように各MapTaskにのpartition0が全てReduceTask1に入れる。partition1はReduceTask2に入れる。
 
@@ -58,4 +63,14 @@
 
 ### 7.4　Shuffle仕組み
 
-　Copy段階からReduceTaskへ転送する過程がShuffleと呼ばれる。
+　Copy段階からReduceTaskへ転送する過程はShuffleです。それもMapTaskからReduceTaskにデータを転送する核心の流れです。
+
+![image-20250621105021712](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250621105021712.png)
+
+　MapTaskの`<key, value>`データを改めて仕切りを行い、新しいパーティションを生成される。次、同じ番号持つパーティションは同じのReduceTaskに入れる。
+
+　つまり、同じのkey値のデータを同じのReduceTaskに入れたいなら、同じのパーティションに割り振られていい。
+
+![image-20250621112951891](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250621112951891.png)
+
+　上図はパーティションのソースコード、key値をRedcueTask数に割ると相同的な余りを持つデータが同じのパーティション番号を返す。あと同じのパーティションに入れる。

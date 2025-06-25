@@ -69,7 +69,7 @@
 
 　MapTaskの`<key, value>`データを改めて仕切りを行い、新しいパーティションを生成される。次、同じ番号持つパーティションは同じのReduceTaskに入れる。
 
-　つまり、同じのkey値のデータを同じのReduceTaskに入れたいなら、同じのパーティションに割り振られていい。
+　同じのkey値のデータを同じのReduceTaskに入れたいなら、同じのパーティションに割り振られていい。ただ、実はその動作はMapReduceにとっては黙認の行為です。
 
 ![image-20250621112951891](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250621112951891.png)
 

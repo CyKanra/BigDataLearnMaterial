@@ -82,9 +82,13 @@ MapReduceの処理流れは、以下の2段階に分けている：
 
 - HADOOP_HOME環境変数の設定
 
-　hadoop-2.9.2インストールパッケージがダウンロードし、任意のディレクトリに置いて解凍する。
+　hadoop-2.9.2インストールパッケージがダウンロードし、任意のディレクトリに置く。
 
-hadoop-2.9.2URL：[Apache Hadoop](https://hadoop.apache.org/release/2.9.2.html)
+hadoop-2.9.2ダウンロードURL：[Apache Hadoop](https://hadoop.apache.org/release/2.9.2.html)
+
+![image-20250625154210190](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250625154210190.png)
+
+　ダウンロードファイルは解凍する必要です。図にある様子まで解凍してはオーケーです。
 
 ![image-20240815140854345](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815140854345.png)
 
@@ -223,11 +227,13 @@ public class WordcountDriver {
 }
 ```
 
+　クラス上部の導入を注意し、ほとんどHadoop下の依頼で、正しく運行するため一致にしてください。
+
 **プログラムの実行（ローカル環境）**
 
 - プログラムの配置
 
-　今回の実行はローカルモードで行い、分散サービスを依頼しない。入力と出力ファイルのパスを引数としてmainメソッド入力値に添加する。
+　今回の実行はローカルモードで行い、分散サービスを依頼しない。入力`D:\wc.txt`と出力ファイルのパス`D:\output`を引数としてmainメソッド入力値に添加する。
 
 ![image-20240814150354113](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240814150354113.png)
 
@@ -261,14 +267,14 @@ git clone --no-checkout https://github.com/cdarlint/winutils.git <ローカル�
 #最上層のディレクトリに入って
 cd winutils
 #指定ディレクトリダをウンロード
-git sparse-checkout init --cone
+git config core.sparsecheckout true
 
-git sparse-checkout set hadoop-2.9.2/bin
+echo "hadoop-2.9.2/bin" >> .git/info/sparse-checkout
 
-git checkout
+git checkout master
 ```
 
-![image-20240815162659093](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240815162659093.png)
+![image-20250625163518897](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250625163518897.png)　
 
 　取得した`hadoop-2.9.2\bin` フォルダ内のファイルを`D:\InstallPackage\hadoop-2.9.2`にコピーして上書きする。
 
@@ -290,11 +296,13 @@ git checkout
 
 ![image-20240816095655450](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240816095655450.png)
 
-　二度と実行すれば、このフォルダを空きにする必要です。
-
 - part-r-00000結果ファイルを開くと下図のように単語とその出現回数が1行ずつ表示されている。
 
 ![image-20240816095901152](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240816095901152.png)
+
+　二度と実行すれば、この`D:\output`フォルダを削除する必要です。
+
+![image-20250625180424296](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250625180424296.png)
 
 **プログラム運行（Hadoop分散式サービス）**
 

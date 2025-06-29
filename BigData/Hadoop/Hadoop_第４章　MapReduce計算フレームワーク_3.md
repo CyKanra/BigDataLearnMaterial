@@ -63,14 +63,21 @@
 
 ### 7.4　Shuffle仕組み
 
-　Copy段階からReduceTaskへ転送する過程はShuffleです。それもMapTaskからReduceTaskにデータを転送する核心の流れです。
+　Copy段階からReduceTaskへ転送する過程はShuffleと呼ばれる。それもMapTaskからReduceTaskにデータを転送する核心の流れです。
 
 ![image-20250621105021712](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250621105021712.png)
 
-　MapTaskの`<key, value>`データを改めて仕切りを行い、新しいパーティションを生成される。次、同じ番号持つパーティションは同じのReduceTaskに入れる。
+　MapTaskの`<key, value>`データは改めて仕切りを行われてあり、新しいパーティションを生成される。MapTaskとReduceTaskの仕切り処理は別々に考える。
 
-　同じのkey値のデータを同じのReduceTaskに入れたいなら、同じのパーティションに割り振られていい。ただ、実はその動作はMapReduceにとっては黙認の行為です。
+　同じのkey値のデータを同じのReduceTaskに入れたいなら、同じのパーティションに割り振られていい。同じ番号持つパーティションは同じのReduceTaskに入れ、その動作はMapReduceにとっては黙認の行為です。
 
-![image-20250621112951891](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250621112951891.png)
+![image-20250628095029834](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250628095029834.png)
 
-　上図はパーティションのソースコード、key値をRedcueTask数に割ると相同的な余りを持つデータが同じのパーティション番号を返す。あと同じのパーティションに入れる。
+　上図はパーティションのソースコードで、key値をRedcueTask数に割ると相同的な余りを持つデータが同じのパーティション番号を返す。あと同じのパーティションに入れる。
+
+### 7.5　カスタムパーティション
+
+　実況にデフォルトのパーティション処理は完全に全ての需要を満たせない、そのためカスタム可能のは必要になる。
+
+
+

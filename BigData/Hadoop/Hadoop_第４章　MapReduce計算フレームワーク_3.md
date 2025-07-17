@@ -77,7 +77,59 @@
 
 ### 7.5　カスタムパーティション
 
-　実況にデフォルトのパーティション処理は完全に全ての需要を満たせない、そのためカスタム可能のは必要になる。
+　実況にデフォルトのパーティション処理は全ての需要を満たせないので、そのためカスタム可能のは必要になる。公式は`Partitioner`クラスを継承し、`getPartition()`メソッドを実装するとカスタムになれる。
 
+　下は設備の情報と使用時間のデータです。実現結果は同じな型番の接頭語を1つファイルに出力する。
 
+```
+#設備id　型番　ネットIP　使用時間
+0a8cd1 kar_909011 149.187.152.169 4054
+0ce73e nex_334455 181.133.189.160 8938
+034347 nex_334455 157.86.7.229 821
+0cdf27 kar_992134 233.205.58.168 9709
+0b66c9 lun_553322 236.9.100.245 9921
+0c35e3 lun_999999 49.179.180.211 5672
+0b6b5d lun_786544 114.179.97.23 7648
+01b85a nex_909123 131.200.122.190 1863
+```
+
+需要分析：
+
+- 同じな接頭語データが3種があり、1種が1ファイルに対するならReduceTask数も3つが要る。
+- パーティションとReduceTaskが一対一なので、パーティション数をコントロールするだけでいい。
+- カスタムあるので、`Partitioner`クラスの`getPartition()`メソッドを実装するのが必要です。
+- データに対するBeanクラスを実装し、直列化Writableを継承する必要です。
+
+**Mapper**
+
+```
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Mapper;
+import java.io.IOException;
+
+public class PartitionMapper extends Mapper<LongWritable, Text, Text, PartitionBean> {
+
+    Text model = new Text();
+    @Override
+    protected void map(LongWritable key, Text value, Mapper<LongWritable, Text, Text, PartitionBean>.Context context) throws IOException, InterruptedException {
+        //一行文字を取得
+        String str = value.toString();
+        //文字を区切って項目リストになる
+        String[] strs = str.split(" ");
+        //型番項目の区切り、入力Keyとして
+        String[] modelStr = strs[1].split("_");
+        String modelKey = modelStr[0];
+        //実体Beanクラスの実装
+        PartitionBean partitionBean = new PartitionBean();
+        partitionBean.setId(strs[0]);
+        partitionBean.setModel(strs[1]);
+        partitionBean.setNetIp(strs[2]);
+        partitionBean.setUsageTime(strs[3]);
+        //出力
+        model.set(modelKey);
+        context.write(model, partitionBean);
+    }
+}
+```
 

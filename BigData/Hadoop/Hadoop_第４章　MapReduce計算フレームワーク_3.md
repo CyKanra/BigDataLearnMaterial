@@ -95,12 +95,14 @@
 
 需要分析：
 
-- 同じな接頭語データが3種があり、1種が1ファイルに対するならReduceTask数も3つが要る。
-- パーティションとReduceTaskが一対一なので、パーティション数をコントロールするだけでいい。
+- 同じな接頭語データが3種があり、1種が1ファイルに対するならReduceTask数はせめて3つが要る。
 - カスタムあるので、`Partitioner`クラスの`getPartition()`メソッドを実装するのが必要です。
 - データに対するBeanクラスを実装し、直列化Writableを継承する必要です。
 
 **Mapper**
+
+- 一行データvalueを取得し、Beanクラスに入れる。
+- 二番目項目の前の部分を出力Keyとして渡す。パーティション処理に銘柄によって異なるファイトに入れることがある。
 
 ```
 import org.apache.hadoop.io.LongWritable;
@@ -129,6 +131,148 @@ public class PartitionMapper extends Mapper<LongWritable, Text, Text, PartitionB
         //出力
         model.set(modelKey);
         context.write(model, partitionBean);
+    }
+}
+```
+
+**Reducer**
+
+- 何も書かなくていい。
+- Mapperに出力Keyを巡って集合処理がないので、Mapper`<key, partitionBean>`形式のままでファイトに出力する。
+
+**Bean**
+
+- Mapperの出力値としてBeanクラスがWritableを継承する必要です。
+- `write`と`readFields`二つメソッドを書き直す。
+- 出力ファイルのデータ形式は書き直した`toString()`で決まる。
+
+```
+import org.apache.hadoop.io.Writable;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
+public class PartitionBean implements Writable {
+
+    private String id;         // 設備id
+    private String model;      // 型番
+    private String netIp;      // ネットIP
+    private String usageTime;     // 使用時間（分など）
+
+    //セッター
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void setModel(String model) {
+        this.model = model;
+    }
+
+    public void setNetIp(String netIp) {
+        this.netIp = netIp;
+    }
+
+    public void setUsageTime(String usageTime) {
+        this.usageTime = usageTime;
+    }
+
+    @Override
+    public String toString() {
+        return id + " | " +
+                model + " | " +
+                netIp + " | " +
+                usageTime;
+    }
+
+    @Override
+    public void write(DataOutput dataOutput) throws IOException {
+        dataOutput.writeUTF(id);
+        dataOutput.writeUTF(model);
+        dataOutput.writeUTF(netIp);
+        dataOutput.writeUTF(usageTime);
+    }
+
+    @Override
+    public void readFields(DataInput dataInput) throws IOException {
+        this.id = dataInput.readUTF();
+        this.model = dataInput.readUTF();
+        this.netIp = dataInput.readUTF();
+        this.usageTime = dataInput.readUTF();
+    }
+}
+```
+
+**Partitioner**
+
+- Partitionerを継承して`getPartition()`メソッドを書き直す。
+- 
+
+```
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Partitioner;
+
+public class CustomPartitioner extends Partitioner<Text,PartitionBean> {
+    @Override
+    public int getPartition(Text text, PartitionBean partitionBean, int numPartitions) {
+        int partition=0;
+        final String appkey = text.toString();
+        if(appkey.equals("kar")){
+            partition=1;
+        } else if (appkey.equals("nex")){
+            partition=2;
+        } else {
+            partition=0;
+        }
+        return partition;
+    }
+ }
+```
+
+**Driver**
+
+- Redcuerの部分がなくなり、Redcuerクラス導入と出力値タイプの設定を省略できる。
+
+```
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+import java.io.IOException;
+
+/**
+ * @ClassName: PartitionDriver
+ * @Description:
+ * @Author: Kanra
+ * @Date: 2025/7/17
+ */
+public class PartitionDriver {
+
+    public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException {
+        //配置ファイルを設定とJobを作成
+        Configuration configuration = new Configuration();
+        Job job = Job.getInstance(configuration, "PartitionDriver");
+        //Mapper、Reducer、Driverクラスを添加
+        job.setJarByClass(PartitionDriver.class);
+        job.setMapperClass(PartitionMapper.class);
+//        job.setReducerClass(PartitionReducer.class);
+		job.setPartitionerClass(CustomPartitioner.class);
+        //Mapの出力値のタイプ
+        job.setMapOutputKeyClass(Text.class);
+        job.setMapOutputValueClass(PartitionBean.class);
+        //最終出力値のタイプ
+//        job.setOutputKeyClass(NullWritable.class);
+//        job.setOutputValueClass(PartitionBean.class);
+		//ReduceTask数設定
+        job.setNumReduceTasks(3);
+        //入力と出力ファイルのアドレス
+        FileInputFormat.setInputPaths(job, new Path("D:\\partition.txt"));
+        FileOutputFormat.setOutputPath(job, new Path("D:\\output"));
+        //タスクをコミット
+        boolean result = job.waitForCompletion(true);
+        System.exit(result ? 0 : 1);
     }
 }
 ```

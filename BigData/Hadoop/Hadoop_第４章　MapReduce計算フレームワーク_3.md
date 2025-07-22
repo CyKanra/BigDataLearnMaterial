@@ -314,7 +314,7 @@ public class PartitionReducer extends Reducer<Text, PartitionBean, NullWritable,
 
 ### 7.5　ReduceTask並行度
 
-　Reduce統合の工程ですけど、並行度の概念もある。MapTaskと切片サイズで決まると違い、ReduceTask数量は手動的に設定できる。
+　Reduceは統合の工程ですけど、並行度の概念もある。MapTaskと切片サイズで決まると違い、ReduceTask数量は手動的に設定できる。
 
 ```
  #3に設定する
@@ -350,3 +350,11 @@ public class PartitionReducer extends Reducer<Text, PartitionBean, NullWritable,
 　複数の空きファイルが出る。
 
 ![image-20250721174750484](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250721174750484.png)
+
+
+
+　ここまで本章の講解が終わりです。
+
+　次の講解はMapReduceについての特性を紹介します。
+
+　よろしくお願いいたします。

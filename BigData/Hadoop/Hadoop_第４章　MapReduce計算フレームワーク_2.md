@@ -112,7 +112,7 @@ mapreduce.input.fileinputformat.split.minsize=64MB
 
 　赤枠にソースコード表れるのは`bytesRemaining` が `splitSize` (切片サイズ) の 1.1 倍より大きい場合にのみ、一つの切片として分割される。ならば129Mのファイルも一つのブロックに入れる。
 
-### まとめ
+
 
 　ここにMapReduceにとって1つの重要な特性が見える。ロジックサイズを切片（spill）サイズに割ると複数のMapTaskをなすから、MapTaskにデータはMapTask数に割るとパーティションをなすまで、その流れにMapTask数、パーティション数は一致です。最初のMapTask一旦決まったら最後までその並行度で動いている。MapReduceの実行方案はその特性に合うかどうかは効率にかなり影響してくる。一方的に並行度を増加すると逆に効率的じゃなくなる。
 

@@ -353,8 +353,8 @@ public class PartitionReducer extends Reducer<Text, PartitionBean, NullWritable,
 
 
 
-　ここまで本章の講解が終わりです。
+ここまで本章の講解が終わりです。
 
-　次の講解はMapReduceについての特性を紹介します。
+次の講解はMapReduceについて幾つか特性を紹介します。
 
-　よろしくお願いいたします。
+よろしくお願いいたします。

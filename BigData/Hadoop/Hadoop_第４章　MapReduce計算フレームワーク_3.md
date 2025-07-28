@@ -6,7 +6,7 @@
 
 ## 第７節　MapReduceの原理分析
 
-### 7.2　ReduceTask運行仕組み
+### 7.3　ReduceTask運行仕組み
 
 ![image-20250604152300239](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250604152300239.png)
 
@@ -49,7 +49,7 @@
 
 ![image-20240820074843969](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240820074843969.png)
 
-### 7.3　Shuffle仕組み
+### 7.4　Shuffle仕組み
 
 　Copy段階からReduceTaskへ転送する過程はShuffleと呼ばれる。それもMapTaskからReduceTaskにデータを転送する核心の流れです。
 
@@ -63,7 +63,7 @@
 
 　上図はパーティションのソースコードで、key値をRedcueTask数に割ると相同的な余りを持つデータが同じのパーティション番号を返す。あと同じのパーティションに入れる。
 
-### 7.4　カスタムパーティション
+### 7.5　カスタムパーティション
 
 　実況にデフォルトのパーティション処理は全ての需要を満たせないので、そのためカスタム可能のは必要になる。公式は`Partitioner`クラスを継承し、`getPartition()`メソッドを実装するとカスタムになれる。
 

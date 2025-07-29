@@ -293,9 +293,9 @@ public class PartitionReducer extends Reducer<Text, PartitionBean, NullWritable,
 　勿論、PartitionDriverにコメントアウトされた部分を解ける。
 
 ```
-//        job.setReducerClass(PartitionReducer.class);
-//        job.setOutputKeyClass(NullWritable.class);
-//        job.setOutputValueClass(PartitionBean.class);
+job.setReducerClass(PartitionReducer.class);
+job.setOutputKeyClass(NullWritable.class);
+job.setOutputValueClass(PartitionBean.class);
 ```
 
 ![image-20250721103049942](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250721103049942.png)

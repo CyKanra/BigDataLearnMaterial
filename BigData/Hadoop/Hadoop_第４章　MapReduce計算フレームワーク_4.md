@@ -95,9 +95,9 @@ job.setCombinerClass(PartitionCombiner.class);
 
 　最終の出力ファイルが必ず一つのみ、ファイルデータは順序がある。
 
-**補助並べ替え（GroupingComparator）：**
+**グループ並べ替え（GroupingComparator）：**
 
-　`<key, value>`データをグループ化して並べ替える。同じの要素を持つデータを同じのReducerに入れる。
+　`<key, value>`データをグループ化して並べ替える。それは一つのReduceTaskについてグループ化する。
 
 **二次並べ替え：**
 
@@ -105,4 +105,47 @@ job.setCombinerClass(PartitionCombiner.class);
 
 　局部と全体の並べ替えは複数のファイルを出力するかどうかだけで決められる。前の案例も使える。カスタムタグ並べ替えはもっと詳しく説明する必要です。次に案例を連れて紹介する。
 
-8.2.1　WritableComparable
+#### 8.2.1　カスタムタグ並べ替え
+
+　ここから案例を挙げてカスタムタグ並べ替えを紹介する。
+
+　前にBeanクラスにの`toString()`メソッドを書き直すと最後の出力形式を決められる。並べ替えも、WritableComparableクラスを継承して`compareTo()`を書き直すによって実現する。
+
+　
+
+#### 8.2.2　GroupingComparator
+
+　GroupingComparatorはReducer段階にコンポーネントの一つで、主に各ReduceTaskごとにデータをグループ化することを行う。SQLの`group by`に似ている。全体のデータをグループ化したいなら1つファイルを出力するだけでいい。
+
+
+
+### 8.3　データ偏りの解決方法
+
+　MapReduceにおけてデータ偏りとは、同じkeyが大量があり、同一のパーティションに割り当てられて1つのReduceTaskだけが重くなるという状況です。その中でこのTaskが非常に遅いために、全体の処理が遅くなり、最悪エラーが起こることもある。
+
+　通用の解決方法はKey値に乱数を加える。
+
+```
+//案例
+public class SkewedKeyMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
+    private Random random = new Random();
+    private Text outKey = new Text();
+    private IntWritable one = new IntWritable(1);
+
+    @Override
+    protected void map(LongWritable key, Text value, Context context)
+            throws IOException, InterruptedException {
+        String word = value.toString().trim();
+        //0〜9の乱数を生成
+        int randPrefix = random.nextInt(10);
+        //Keyと組み合わせて分散度を高める
+        outKey.set(randPrefix + "_" + word);
+        context.write(outKey, one);
+    }
+}
+
+```
+
+　Redcuer段階にkeyを戻して集約を行う。
+
+### 8.4　MapReduce入力と出力

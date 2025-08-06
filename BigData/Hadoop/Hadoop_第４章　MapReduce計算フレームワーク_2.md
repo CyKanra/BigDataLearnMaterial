@@ -2,25 +2,25 @@
 
 # 第４章　MapReduce計算フレームワーク-2/3
 
-　MapReduceにのMapTask運行原理について紹介する。
+　ここでは、MapReduceの実行原理について説明する。
 
 ## 第７節　MapReduceの原理分析
 
-　全体のMapReduce流れがMapTaskとReduceTaskに分けておきて紹介を進める。
+　MapReduce全体の処理流れは、MapTaskとReduceTaskに分けて考えることができ、本章ではまずMapTask側から順に解説を進めていく。
 
 ### 7.1　MapTask運行仕組み
 
 ![img](D:\OneDrive\picture\Typora\BigData\Hadoop\a9b2a382aae117feefb7706a65771940.png)
 
-**Read階段**
+**Read段階**
 
-- まず、目標ファイルを読み込む前にローカルでブロック（block）に切り分けて各節点に割り当てる。一般的には128MB固定大小に従って分割し、残り不足するなら一つのブロックとして処理する。
-- データを読み込む時にgetSplits() メソッドを使用してブロックを切片（splits）に切り分けます。それは理論的な切り分け、デフォルト場合でsplitsの大小は128MBで、ブロックのデフォルト大小と同じです。即ち、デフォルト場合でsplitとblock関係が一対一です。あと、splitsの数量に応じて次の階段に同様なMapTask数を起動されてあります。
-- InputFormatクラスを継承するFileInputFormatが、getSplits()メソッドを実装してファイルの切り分けをします。この切り分けは論理的（ロジック）で、物理的な切り分けではありません。
+- まず、対象ファイルは読み込まれる前に、ローカルでブロック（block）に分割されて各ノードに割り当てられる。通常、128MBの固定サイズに従って分割し、残る部分が128MBに満たない場合でも、1つのブロックとして処理される。
+- データを読み込む時には、`getSplits()` メソッドを使用して、ブロックを論理的な単位であるス切片（split）に分割する。この分割は物理的ではなく理論上の切り分けであり、デフォルトでは切片のサイズは 128MBに設定されており、HDFSのブロックサイズと同じです。そのため、通常の設定では切片とブロックは一対一関係です。そして、切片の数に応じて、同数のMapTaskが後続の段階で起動される。
+- `InputFormat`クラスを継承する`FileInputFormat`が、`getSplits()`メソッドを実装して、入力ファイルを切り分ける。この切り分けは論理的なものであり、物理的に分割するわけではない。
 
 ![image-20240923114610607](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240923114610607.png)
 
-- 切り分けされたのsplit情報、実行するコードを含むjarファイル、そしてジョブ（Job）実行に必要な設定情報（XML設定ファイルなど）を作成します。この一連の情報がまとめられ、YARNに提出されます。
+- 切り分けされたsplit情報、実行対象のコードを含むjarファイル、さらにジョブ（Job）実行に必要な設定情報（XML設定ファイルなど）を作成します。この一連の情報がまとめられ、YARNに提出されます。
 - YARNは、この提出されたジョブに対して、ジョブを実行する必要なリソース（メモリ、CPUなど）を割り当てます。YARNはまず MrAppMaster（MapReduce Application Master）という実体を起動して、ジョブの周期を管理し、流れの実行順序を制定します。後のMapTask、ReduceTaskにジョブ処理がMrAppMasterの制御で仕上げます。
 
 ![image-20241223075836684](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20241223075836684.png)

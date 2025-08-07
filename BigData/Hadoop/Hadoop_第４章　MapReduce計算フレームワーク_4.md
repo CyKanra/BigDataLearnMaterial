@@ -149,3 +149,40 @@ public class SkewedKeyMapper extends Mapper<LongWritable, Text, Text, IntWritabl
 　Redcuer段階にkeyを戻して集約を行う。
 
 ### 8.4　MapReduce入力と出力
+
+　前の案件に入力と出力はデフォルトTextOutputFormat形式で進む。ここから別の入力と出力の形式について紹介する。
+
+#### 8.4.1　InputFormat
+
+　InputFormatはMapReduceに入力ファイルを読み込むに関する親クラスです。異なる入力ファイルに応じて、MapReduceが不同の子クラスを提供して処理できる。
+
+　常に使うInputFormatの子クラス：
+
+- TextInputFormat：通常のテキストファイル。MapReduceフレームワークのデフォルトの読み取り実装クラス。
+
+- KeyValueTextInputFormat：1行のテキストデータを指定の区切り文字で読み取り、データをkey-value形式に変換。
+
+- NLineInputFormat：データを指定した行数ごとに分割して読み取る。
+
+- CombineTextInputFormat：小さなファイルをまとめて読み取り、Mapタスクの起動数を減らす。
+
+- カスタムInputFormat：独自定義のInputFormat。
+
+**CombineTextInputFormat**
+
+
+
+**カスタムInputFormat**
+
+
+
+#### 8.4.2　OutputFormat
+
+　OutputFormatはMapReduceデータ出力の親クラス、どんなデータ出力はOutputFormatを実装することがある。
+
+　常に使うOutputFormatの子クラス：
+
+- TextOutputFormat：デフォルトの出力形式は `TextOutputFormat` で、各レコードを1行のテキストとして書き出す。KeyとVauleは任意の型でもよく、`TextOutputFormat` は `toString()` メソッドを使ってそれらを文字列に変換する。
+- SequenceFileOutputFormat：圧縮されやすいフォーマットなので、`SequenceFileOutputFormat` を出力形式として使えば、後続の MapReduce タスクの入力として利用しやすい。
+
+**カスタムOutputFormat**

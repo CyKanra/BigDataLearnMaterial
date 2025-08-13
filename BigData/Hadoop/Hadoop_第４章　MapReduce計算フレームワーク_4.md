@@ -111,7 +111,46 @@ job.setCombinerClass(PartitionCombiner.class);
 
 　前にBeanクラスにの`toString()`メソッドを書き直すと最後の出力形式を決められる。並べ替えも、WritableComparableクラスを継承して`compareTo()`を書き直すによって実現する。
 
-　
+　案例はまだ設備使用時間を基づいて、設備の銘柄と使用時間で二重並べ替えを行う。
+
+```
+0a8cd1 kar_992134 149.187.152.169 4054
+0ce73e kar_334455 181.133.189.160 8938
+034347 kar_334455 157.86.7.229 821
+0cdf27 kar_992134 233.205.58.168 9709
+0b66c9 kar_553322 236.9.100.245 9921
+0c35e3 kar_999999 49.179.180.211 5672
+0b6b5d kar_786544 114.179.97.23 7648
+01b85a kar_553322 131.200.122.190 1863
+0bdn27 kar_786544 233.185.58.152 371900
+```
+
+**Mapper**
+
+　MRフレームワークにshuffle段階にKeyで並べ替えは黙認の行為です。この行為を避けるため、BeanクラスをKeyとして入れる
+
+```
+public class SortMapper extends Mapper<LongWritable, Text, SortBean, NullWritable> {
+    @Override
+    protected void map(LongWritable key, Text value, Mapper<LongWritable, Text, SortBean, NullWritable>.Context context)
+            throws IOException, InterruptedException {
+        //一行文字を取得
+        String str = value.toString();
+        //文字を区切って単語数組になる
+        String[] strs = str.split(" ");
+        SortBean sortBean = new SortBean();
+        sortBean.setId(strs[0]);
+        sortBean.setModel(strs[1]);
+        sortBean.setNetIp(strs[2]);
+        sortBean.setUsageTime(Long.parseLong(strs[3]));
+        //出力
+        context.write(sortBean, NullWritable.get());
+    }
+}
+
+```
+
+
 
 #### 8.2.2　GroupingComparator
 

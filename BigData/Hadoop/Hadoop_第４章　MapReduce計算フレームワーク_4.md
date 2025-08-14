@@ -111,7 +111,7 @@ job.setCombinerClass(PartitionCombiner.class);
 
 　前にBeanクラスにの`toString()`メソッドを書き直すと最後の出力形式を決められる。並べ替えも、WritableComparableクラスを継承して`compareTo()`を書き直すによって実現する。
 
-　案例はまだ設備使用時間を基づいて、設備の銘柄と使用時間で二重並べ替えを行う。
+　データはまだ設備使用時間を使って、実現したい結果は設備の銘柄の番号と使用時間で二重並べ替えを行う。
 
 ```
 0a8cd1 kar_992134 149.187.152.169 4054
@@ -125,9 +125,88 @@ job.setCombinerClass(PartitionCombiner.class);
 0bdn27 kar_786544 233.185.58.152 371900
 ```
 
+**Bean**
+
+- `WritableComparable`クラスを継承し、もう`Writable`じゃない。
+- `compareTo()`メソッドを上書きし、2つ項目を持って二重比較を行う。
+- `compareTo()`メソッド戻り値は1、0、-1があり、意味は入力値がより大きい、等しい、より小さい。
+- `compareTo()`と`toString()`はRedcuerｎ段階にファイルにデータを出力するに身に立ってある。
+
+```
+public class SortBean implements WritableComparable<SortBean> {
+
+    private String id;         // 設備id
+    private String model;      // 型番
+    private String netIp;      // ネットIP
+    private Long usageTime;     // 使用時間（分など）
+
+    public String getModel() {
+        return model;
+    }
+    
+    public Long getUsageTime() {
+        return usageTime;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void setModel(String model) {
+        this.model = model;
+    }
+
+    public void setNetIp(String netIp) {
+        this.netIp = netIp;
+    }
+
+    public void setUsageTime(Long usageTime) {
+        this.usageTime = usageTime;
+    }
+
+    @Override
+    public String toString() {
+        return id + " " +
+                model + " " +
+                netIp + " " +
+                usageTime;
+    }
+
+    @Override
+    public void write(DataOutput dataOutput) throws IOException {
+        dataOutput.writeUTF(id);
+        dataOutput.writeUTF(model);
+        dataOutput.writeUTF(netIp);
+        dataOutput.writeLong(usageTime);
+    }
+
+    @Override
+    public void readFields(DataInput dataInput) throws IOException {
+        this.id = dataInput.readUTF();
+        this.model = dataInput.readUTF();
+        this.netIp = dataInput.readUTF();
+        this.usageTime = dataInput.readLong();
+    }
+
+    @Override
+    public int compareTo(SortBean sortBean) {
+        String[] modelStr =sortBean.getModel().split("_");
+        Long modelKey = Long.parseLong(modelStr[1]);
+        String[] modelStr2 = model.split("_");
+        Long modelKey2 =  Long.parseLong(modelStr2[1]);
+        if (modelKey2 != modelKey)
+            return Long.compare(modelKey2, modelKey);
+
+        return Long.compare(usageTime, sortBean.getUsageTime());
+    }
+}
+```
+
 **Mapper**
 
-　MRフレームワークにshuffle段階にKeyで並べ替えは黙認の行為です。この行為を避けるため、BeanクラスをKeyとして入れる
+- 出力メソッド`context.write()`のKeyはsortBean対象に変わって、valueの部分はnullになる。
+- そうする理由はMRフレームワークにshuffle段階にKeyで並べ替えは黙認の行為で、その行為の実行メソッドは`compareTo()`です。
+- そのため、compareTo()メソッドを有効にして欲しいならSortBeanをKeyとして渡す必要です。
 
 ```
 public class SortMapper extends Mapper<LongWritable, Text, SortBean, NullWritable> {

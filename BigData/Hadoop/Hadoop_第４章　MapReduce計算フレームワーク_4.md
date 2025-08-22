@@ -130,7 +130,7 @@ job.setCombinerClass(PartitionCombiner.class);
 - `WritableComparable`クラスを継承し、もう`Writable`じゃない。
 - `compareTo()`メソッドを上書きし、2つ項目を持って二重比較を行う。
 - `compareTo()`メソッド戻り値は1、0、-1があり、意味は入力値がより大きい、等しい、より小さい。
-- `compareTo()`と`toString()`はRedcuerｎ段階にファイルにデータを出力するに身に立ってある。
+- `compareTo()`と`toString()`はRedcuer段階にファイルにデータを出力する過程に役立つ。
 
 ```
 public class SortBean implements WritableComparable<SortBean> {

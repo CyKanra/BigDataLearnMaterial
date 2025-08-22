@@ -128,8 +128,8 @@ job.setCombinerClass(PartitionCombiner.class);
 **Bean**
 
 - `WritableComparable`クラスを継承し、もう`Writable`じゃない。
-- `compareTo()`メソッドを上書きし、2つ項目を持って二重比較を行う。
-- `compareTo()`メソッド戻り値は1、0、-1があり、意味は入力値がより大きい、等しい、より小さい。
+- `compareTo()`メソッドを上書きし、2つ項目を持って二重比較も実現できる。
+- `compareTo()`メソッド戻り値は1、0、-1があり、意味は入力値が比べてより大きい、等しい、より小さい。
 - `compareTo()`と`toString()`はRedcuer段階にファイルにデータを出力する過程に役立つ。
 
 ```
@@ -205,8 +205,7 @@ public class SortBean implements WritableComparable<SortBean> {
 **Mapper**
 
 - 出力メソッド`context.write()`のKeyはsortBean対象に変わって、valueの部分はnullになる。
-- そうする理由はMRフレームワークにshuffle段階にKeyで並べ替えは黙認の行為で、その行為の実行メソッドは`compareTo()`です。
-- そのため、compareTo()メソッドを有効にして欲しいならSortBeanをKeyとして渡す必要です。
+- そうする理由はMRフレームワークにshuffle段階にKeyで並べ替えは黙認の行為で、その行為の実行メソッドは`compareTo()`です。そのため、`compareTo()`メソッドを有効にして欲しいならSortBeanをKeyとして渡す必要です。
 
 ```
 public class SortMapper extends Mapper<LongWritable, Text, SortBean, NullWritable> {
@@ -227,6 +226,54 @@ public class SortMapper extends Mapper<LongWritable, Text, SortBean, NullWritabl
     }
 }
 
+```
+
+**Reducer**
+
+　特別の変わりがない
+
+```
+public class SortReducer extends Reducer<Text, SortBean, NullWritable, SortBean> {
+    @Override
+    protected void reduce(Text key, Iterable<SortBean> values, Reducer<Text, SortBean, NullWritable, SortBean>.Context context) throws IOException, InterruptedException {
+        for (SortBean value : values) {
+            context.write(NullWritable.get(), value);
+        }
+    }
+}
+```
+
+**Driver**
+
+　Mapperの出力タイプは改修が必要です。
+
+```
+public class SortDriver {
+
+    public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException {
+        //配置ファイルを設定とJobを作成
+        Configuration configuration = new Configuration();
+        Job job = Job.getInstance(configuration, "SortDriver");
+        //Mapper、Reducer、Driverクラスを添加
+        job.setJarByClass(SortDriver.class);
+        job.setMapperClass(SortMapper.class);
+        job.setReducerClass(SortReducer.class);
+        //Mapの出力値のタイプ
+        job.setMapOutputKeyClass(SortBean.class);
+        job.setMapOutputValueClass(NullWritable.class);
+        //最終出力値のタイプ
+        job.setOutputKeyClass(NullWritable.class);
+        job.setOutputValueClass(SortBean.class);
+
+        job.setNumReduceTasks(0);
+        //入力と出力ファイルのアドレス
+        FileInputFormat.setInputPaths(job, new Path("D:\\partition.txt"));
+        FileOutputFormat.setOutputPath(job, new Path("D:\\output"));
+        //タスクをコミット
+        boolean result = job.waitForCompletion(true);
+        System.exit(result ? 0 : 1);
+    }
+}
 ```
 
 

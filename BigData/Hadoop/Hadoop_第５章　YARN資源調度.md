@@ -20,4 +20,10 @@
 
 ## 第２節　YARN運行仕組み
 
-　
+![image-20250828172350879](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250828172350879.png)
+
+**Taskの提出**
+
+1. WordCount計算案例を紹介する時、`JavaPractice-1.0.0-SNAPSHOT.jar`パッケージを運行する前にノードにアップロードすることがある。
+2. パッケージを運行して、先ずResourceManagerへ計算任務Applicationの申請を提出する。
+3. 

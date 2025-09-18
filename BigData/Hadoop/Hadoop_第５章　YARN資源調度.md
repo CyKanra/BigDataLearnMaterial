@@ -22,7 +22,7 @@
 
 ![image-20250828172350879](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250828172350879.png)
 
-**Taskの提出**（１－５）
+**Taskの提出**（1-5）
 
 1. WordCount計算案例に`JavaPractice-1.0.0-SNAPSHOT.jar`運行パッケージがあり、それをあるノードにアップロードする。
 2. HDFSコマンドでパッケージを運行し、内部的には `YarnRunner` が呼び出され、ジョブの提出処理が始まる。その時、ResourceManagerへ計算任務Applicationの申請を提出する。
@@ -30,9 +30,20 @@
 4. ノードはジョブに必要なファイルを先ほどのディレクトリにアップロードする。`job.split`分割情報、`job.xml`ジョブの設定情報、`wc.jar`運行パッケージを含む。
 5. 運行ファイル提出が完成したらResourceManagerに通知し、当のノードのApplicationMasterを起動する申請を提出する。
 
-**ジョブの初期化**（６－９）
+**ジョブの初期化**（6-9）
 
 1. ResourceManagerは、申請されたApplicationを1つのTaskとして初期化し、余力があるノードを決める。
-2. ResourceManagerからTaskを受ける。
+2. NodeManagerはResourceManagerからTaskを受ける。
 3. NodeManagerがApplicationMasterを動かすためのContainerを作成する。
-4. NodeManagerがHDFSからジョブ資源をダウンロードする。そこまでApplicationMasterがジョブ実行の準備を完成した。
+4. NodeManagerがHDFSからジョブ資源をダウンロードする。そこまでApplicationMasterがジョブ実行の準備は完成した。
+
+**タスク割り当て**（10-11）
+
+1. AppMasterはResourceManagerに複数の運行資源の要求を提出する。
+2. ジョブの初期化の流れを繰り返す。複数の初期化されたApplicationTaskが隊列に読み込む。後でNodeManagerに順次割り当てる。
+3. 別のノードが要るかどうかのは`Job.split`の切片情報によって決める。
+
+**タスク運行**（12-15）
+
+1. AppMasterがNodeManagerに対してMapTask実行の起動スクリプトを送信する。各 NodeManagerはContainerを起動し、その中でMapTaskを実行する。
+2. 全MapTaskが完了したら、AppMasterは再度ResourceManagerにReduceTask用Containerの資源を申請する。

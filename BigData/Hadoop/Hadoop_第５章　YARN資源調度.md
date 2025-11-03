@@ -22,17 +22,57 @@
 
 ![image-20250828172350879](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250828172350879.png)
 
-**Taskの提出**（１－５）
+**Taskの提出**（1-5）
 
-1. WordCount計算案例に`JavaPractice-1.0.0-SNAPSHOT.jar`運行パッケージがあり、それをあるノードにアップロードする。
-2. HDFSコマンドでパッケージを運行し、内部的には `YarnRunner` が呼び出され、ジョブの提出処理が始まる。その時、ResourceManagerへ計算任務Applicationの申請を提出する。
-3. ResourceManagerがApplicationIDと、HDFS上の一時ディレクトリのパスを返す。例えば、`hdfs://.../.staging/application_xxxx`。
-4. ノードはジョブに必要なファイルを先ほどのディレクトリにアップロードする。`job.split`分割情報、`job.xml`ジョブの設定情報、`wc.jar`運行パッケージを含む。
-5. 運行ファイル提出が完成したらResourceManagerに通知し、当のノードのApplicationMasterを起動する申請を提出する。
+- WordCount計算案例に`JavaPractice-1.0.0-SNAPSHOT.jar`運行パッケージがあり、それをあるノードにアップロードする。
+- HDFSコマンドでパッケージを運行し、内部的には `YarnRunner` が呼び出され、ジョブの提出処理が始まる。その時、ResourceManagerへ計算任務Applicationの申請を提出する。
+- ResourceManagerがApplicationIDと、HDFS上の一時ディレクトリのパスを返す。例えば、`hdfs://.../.staging/application_xxxx`。
+- ノードはジョブに必要なファイルを先ほどのディレクトリにアップロードする。`job.split`分割情報、`job.xml`ジョブの設定情報、`wc.jar`運行パッケージを含む。
+- 運行ファイル提出が完成したらResourceManagerに通知し、当のノードのApplicationMasterを起動する申請を提出する。
 
-**ジョブの初期化**（６－９）
+**ジョブの初期化**（6-9）
 
-1. ResourceManagerは、申請されたApplicationを1つのTaskとして初期化し、余力があるノードを決める。
-2. ResourceManagerからTaskを受ける。
-3. NodeManagerがApplicationMasterを動かすためのContainerを作成する。
-4. NodeManagerがHDFSからジョブ資源をダウンロードする。そこまでApplicationMasterがジョブ実行の準備を完成した。
+- RMは、申請されたApplicationを1つのTaskとして初期化し、余力があるノードを決める。
+- NodeManagerはRMからTaskを受ける。
+- NodeManagerがAppMasterを動かすためのContainerを作成する。
+- NodeManagerがHDFSからジョブ資源をダウンロードする。そこまでAppMasterがジョブ実行の準備は完成した。
+
+**タスク割り当て**（10-11）
+
+- AppMasterはRMに複数の運行資源の要求を提出する。
+- ジョブの初期化の流れを繰り返す。複数の初期化されたAppTaskが隊列に読み込む。後でNodeManagerに順次に割り当てる。
+- 別のノードが要るかどうかのは`Job.split`の切片情報によって決める。
+
+**タスク運行**（12）
+
+- AppMasterがNodeManagerに対してMapTask実行の起動スクリプトを送信する。各 NodeManagerはContainerを起動し、その中でMapTaskを実行する。
+- 全MapTaskが完了したら、その出力結果はAppMasterに報告する。AppMasterは再度RMにReduceTask用Containerの資源を申請する。
+
+![image-20251031113704010](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20251031113704010.png)
+
+**ReduceTask資源の申請**（13）
+
+- RMに対してReduceTask用のContainerを申請する。
+- RMはクラスタ全体のNodeManagerの状態を確認し、空きのあるノードにContainerを優先的に割り当てる。
+
+**ReduceTaskの実行開始**（14-15）
+
+- RMからの指示を受けたNodeManagerは、ReduceTaskのContainerを作成し、その中でReduceTaskプロセスを起動される。
+- ReduceTaskは、AppMasterを通じてすべてのMapTask出力ファイルの所在を問い合わせる。
+- この時点で自分の担当するパーティションのデータを、各NodeManager上のMapTask出力からネットワーク経由でダウンロード (Shuffle)する。
+- 因みに、その自分の担当するパーティション数はジョブの最初に決まっていた。
+
+**ジョブの終了**
+
+- 各タスクはNodeManagerに完了を報告し、AppMasterがそれを集約して状態を確認する。
+- 「ジョブ完了」通知を受けたResourceManagerはAppMasterの登録を解除する。
+- NodeManagerがAppMasterのコンテナも含め、一時ファイルや作業ディレクトリなどを削除し、メモリやCPUなどのリソースが解放される。
+
+**進捗の更新**
+
+　ジョブを実行してる間に、進捗を追って出力、管理する必要がある。大体3つのところがある。
+
+- Task->AppMaster：各NodeManager上のTaskがAppMasterに進捗を報告する。
+- AppMaster → RM：ジョブ全体の状態を報告する。
+- Client → AppMaster：定期ポーリングで最新状態を取得する。
+

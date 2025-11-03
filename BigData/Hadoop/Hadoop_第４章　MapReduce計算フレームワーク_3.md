@@ -29,7 +29,8 @@
 
 **Merge段階**
 
-　Copy段階収集されるデータを統合する。例えば、各MapTaskから収集されるpartition0を1つ大きなpartition0になる。
+- Copy段階収集されるデータを統合する。例えば、各MapTaskから収集されるpartition0を1つ大きなpartition0になる。
+- どうやってReduceTaskが自分に属するパーティションを見つける？それは各 MapTask は、出力結果を「分区（パーティション）」ごとにローカルファイルに保存しており、各ファイルは `map_output_[partitionID]` のような形式で保持されている。ReduceTaskは、そのファイルによって対応のアドレスからMaptask結果を取得する。
 
 **Sort段階**
 

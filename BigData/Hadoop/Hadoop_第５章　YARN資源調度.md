@@ -68,11 +68,19 @@
 - 「ジョブ完了」通知を受けたResourceManagerはAppMasterの登録を解除する。
 - NodeManagerがAppMasterのコンテナも含め、一時ファイルや作業ディレクトリなどを削除し、メモリやCPUなどのリソースが解放される。
 
-**進捗の更新**
+**進捗の確認**
 
-　ジョブを実行してる間に、進捗を追って出力、管理する必要がある。大体3つのところがある。
+　ジョブを実行してる間に進捗を追って出力、管理するが要る。大体4つのところがある。
 
-- Task->AppMaster：各NodeManager上のTaskがAppMasterに進捗を報告する。
+- Task → AppMaster：各NodeManager上のTaskがAppMasterに進捗を報告する。
 - AppMaster → RM：ジョブ全体の状態を報告する。
 - Client → AppMaster：定期ポーリングで最新状態を取得する。
+- Client → User：コンソールに進行率やタスク件数を出力する。
 
+　Yarnはジョブの進捗と状態をAppMasterに報告する。クライアントはAppMasterにリクエストを発送し、取得する情報をユーザに展示する。リクエストの間隔はmapreduce.client.completion.pollinterval変数でコントロールできる。
+
+　上述の方式を除いて、クライアントが手動でwaitForCompletion()メソッドを呼び出して進捗と状態をチェックできる。
+
+　ジョブが終わったらAppMasterとContainer が清理される。実行後のMapReduceジョブ状態を構造化してJobHistoryServerに格納される。
+
+## 第２節　YARN調度策略

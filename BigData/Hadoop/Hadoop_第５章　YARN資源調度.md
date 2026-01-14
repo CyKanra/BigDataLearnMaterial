@@ -20,7 +20,7 @@
 
 ## 第２節　YARN運行仕組み
 
-![image-20250828172350879](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250828172350879.png)
+![image-20260115062223925](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20260115062223925.png)
 
 **Taskの提出**（1-5）
 
@@ -36,6 +36,8 @@
 - NodeManagerはRMからTaskを受ける。
 - NodeManagerがAppMasterを動かすためのContainerを作成する。
 - NodeManagerがHDFSからジョブ資源をダウンロードする。そこまでAppMasterがジョブ実行の準備は完成した。
+
+![image-20250828172350879](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250828172350879.png)
 
 **タスク割り当て**（10-11）
 
@@ -84,3 +86,15 @@
 　ジョブが終わったらAppMasterとContainer が清理される。実行後のMapReduceジョブ状態を構造化してJobHistoryServerに格納される。
 
 ## 第２節　YARN調度策略
+
+　Hadoop / YARNの代表的な3つのスケジューラはFIFO、Capacity Scheduler和Fair Schedulerある。Hadoopデフォルト状態はCapacity Scheduler策略です。
+
+　yarn-default.xml設定ファイルに「yarn.resourcemanager.scheduler.class」変数は対応のスケジューラをコントロールできる。
+
+![image-20260115063839733](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20260115063839733.png)
+
+**FIFO Scheduler**
+
+　一番理解しやすいスケジューラで、投入順に先に来るジョブを先ず実行するんです。
+
+![image-20260115065739691](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20260115065739691.png)

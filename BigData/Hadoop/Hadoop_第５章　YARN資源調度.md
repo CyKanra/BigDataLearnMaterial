@@ -95,6 +95,10 @@
 
 **FIFO Scheduler**
 
-　一番理解しやすいスケジューラで、投入順に先に来るジョブを先ず実行するんです。
+　一番理解しやすいスケジューラで、投入順に先に来るジョブを先ず実行される。小規模・単一ユーザー環境向け、本番環境に似合わない。大きなジョブを実行するとき他の待たなければならない。学習用途、検証環境などこのモードをお勧めする。
 
 ![image-20260115065739691](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20260115065739691.png)
+
+**Capacity Scheduler**
+
+![image-20260116065451201](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20260116065451201.png)

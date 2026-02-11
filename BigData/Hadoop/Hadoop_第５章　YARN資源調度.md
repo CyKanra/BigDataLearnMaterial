@@ -1,6 +1,6 @@
 # 分散大規模データ処理システム -- Hadoop-10
 
-# 第５章　YARN資源調度-1
+# 第５章　YARN資源調度
 
 ## 第１節　YARNフレームワーク
 
@@ -20,7 +20,7 @@
 
 ## 第２節　YARN運行仕組み
 
-![image-20260115062223925](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20260115062223925.png)
+![image-20260207125404012](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20260207125404012.png)
 
 **Taskの提出**（1-5）
 
@@ -101,4 +101,130 @@
 
 **Capacity Scheduler**
 
+　Apache Hadoopのデフォルトのスケジューラです。クラスタを待ち行列（Queue、キュー）に分割し、各キューに最低保証容量（Capacity）を割り当てる。空きがあれば他キューが一時的に利用可能です。そうすると同時に複数のジョブを処理することができる。
+
+　単独の1つキューにはFIFO策略で処理する。また各キューの下に、さらにサブキューが作られることもあって資源を分けられる。
+
 ![image-20260116065451201](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20260116065451201.png)
+
+ **Fair Scheduler**
+
+　公平スケジューラは各ジョブに資源を公平に分けるとする。
+
+　例えば、ユーザAだけがジョブを実行し、クラスタ資源の100%が割り当てられる。ユーザBはジョブを1つ投入してユーザAから50％資源を引き出してユーザBに割り当てる。次はユーザBがもう1つジョブ2を投入して続ける。Bの取り分を分割してジョブごとに25%資源を持っている。
+
+　注意のところは Fair Schedulerは完全にジョブ数で資源を割り当てて、ユーザとジョブを併用して分割される。
+
+#### スケジューラの設定
+
+　スケジューラの設定はちょっと複雑、どのスケジューラ策略を使うはyarn-site.xmlファイトに設定する。スケジューラ下の具体的なパラメータは専用の設定ファイルに書く。
+
+**Capacity Scheduler**
+
+　下記の設定をyarn-site.xmlファイルに追加する。でもCapacity Schedulerは元々デフォルト設定で、何も書かなくていい。
+
+```
+<!-- capacity -->
+<property>
+    <name>yarn.resourcemanager.scheduler.class</name>
+    <value>org.apache.hadoop.yarn.server.resourcemanager.scheduler.capacity.CapacityScheduler</value>
+</property>
+```
+
+　詳細のはcapacity-scheduler.xmlに設定できる。
+
+![image-20260211102958955](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20260211102958955.png)
+
+　capacity-scheduler.xmlに設定パラメータがあり、説明によって変更できる。
+
+![image-20260211103255740](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20260211103255740.png)
+
+**FIFO Scheduler**
+
+　専用のfifo-scheduler.xmlファイルが不要、単純に「先着順」で回すだけなので、細かい設定がほとんど無い。
+
+```
+<!-- FIFO -->
+<property>
+    <name>yarn.resourcemanager.scheduler.class</name>
+    <value>org.apache.hadoop.yarn.server.resourcemanager.scheduler.fifo.FifoScheduler</value>
+</property>
+```
+
+ **Fair Scheduler**
+
+　複数ユーザーの間に資源の隔離を設定したい場合があっては、Fair Scheduler策略しか選ばない。
+
+　以下はyarn-site.xmlにの設定、専用のfair-scheduler.xmlを新規する必要です
+
+```
+<!-- Fair Scheduler を使う -->
+<property>
+    <name>yarn.resourcemanager.scheduler.class</name>
+    <value>org.apache.hadoop.yarn.server.resourcemanager.scheduler.fair.FairScheduler</value>
+</property>
+
+<!-- Fair Scheduler の設定ファイル -->
+<property>
+    <name>yarn.scheduler.fair.allocation.file</name>
+    <value>/etc/hadoop/conf/fair-scheduler.xml</value>
+</property>
+
+<!-- キュー（pool）が無ければ自動作成 -->
+<property>
+    <name>yarn.scheduler.fair.allow-undeclared-pools</name>
+    <value>true</value>
+</property>
+```
+
+　fair-scheduler.xml内容の案例
+
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<allocations>
+    <!-- 通用設定、全員向け -->
+    <queueMaxAppsDefault>50</queueMaxAppsDefault>
+    <userMaxAppsDefault>20</userMaxAppsDefault>
+
+    <!-- 指定ユーザーの設定 -->
+    <queue name="root">
+        <!-- ユーザーuserA：優先度高、最低保証あり-->
+        <queue name="userA">
+        
+        	<!-- 優先度高いほうが最低保証あり -->
+        	<priority>5</priority>
+            <minResources>4096mb,4vcores</minResources>
+            
+            <!-- 複数のユーザー競争関係で、資源の占有率75% -->
+            <weight>3.0</weight>
+            
+            <!-- 最大のジョブ数30 -->
+            <maxRunningApps>30</maxRunningApps>
+        </queue>
+
+        <!-- ユーザーuserB：最低保証は小さめ、でも空いてたら使える -->
+        <queue name="userB">
+        
+        	<!-- 優先度低いほうは最低保証弱い -->
+        	<priority>1</priority>
+            <minResources>1024mb,1vcores</minResources>
+            
+            <!-- 資源の占有率25% -->
+            <weight>1.0</weight>
+            
+            <!-- 最大のジョブ数10 -->
+            <maxRunningApps>10</maxRunningApps>
+        </queue>
+    </queue>
+</allocations>
+```
+
+
+
+ここまでは、Hadoopの講解が終わりです。
+
+大体Hadoopの基礎知識がほとんど含まれ、一応ここに終えて次の主題に入る。
+
+以後、Hadoopの実戦の講解あれば更新を続ける。
+
+よろしくお願いいたします。

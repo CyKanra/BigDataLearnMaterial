@@ -12,20 +12,23 @@
 
 **Copy段階**
 
-- ReduceTask側は、MapTaskから送られてきたデータを取得し、一旦バッファに書き込んでおく。一定閾値に達すると、ディスクに書き込む。MapTaskのSpill過程と似ている。
-- MapTaskから受け取るデータは、同じ余りを持つ`<key：単語/value：単語数>`パーティションです。各MapTaskパーティションデータをもう一度、その段階に纏められる。そのデータはMapTask流れにもうkeyで並べ替えられてあった。
-- ただ、図にのpartition0、partition1はMapTask数で決まっているじゃなく、ReduceTask数によって生まれる。ここMapTaskからパーティション状態を保って直接にReduceTaskに転送すると誤解しやすい
-
-- ReduceTask数はコード層に設定でき、MapTask数とは関係ない。ロジックは<key：単語/value：単語数>をReduceTask数に割り、同じ余りを持つの値で仕切られて同じパーティションに入れると類似けど、実はMapTaskとは2つの流れです。
+- Copy段階とは、MapTask側で最終生成された統合済みファイルを、ReduceTask側で取得する処理を指す。
+- ここ誤解しやすい点がある。図では、partition0、partition1のパーティション数、MapTask数、ReduceTask数が同じに描かれているため、何らか対応関係があるように見えるかも。しかし、実際には必ずしも同じである必要はない。
+- 1つノード（node）で複数のMapTaskが実行されることがある。それはブロック（block）が切片サイズ（split size）に分割され、その数に応じてMapTaskが生成される。
+- ReduceTaskの数はコードレベルに設定できる。切片サイズとは関係ない。
 
 
 ```
  job.setNumReduceTasks(3);
 ```
 
-- 上図のようにReduceTask数とMapTask数を一致にする場合、MapTaskのパーティション結果とReduceTaskのパーティション結果が同じになる。どっちがkey値をTask数に割ると余りによってパーティションを生成する。同じパーティションが1つのReduceTaskに入れる。例えば、図の表示するように各MapTaskにのpartition0が全てReduceTask1に入れる。partition1はReduceTask2に入れる。
+- ただし、パーティション数はReduceTask数と一致する。パーティションはReduceTask数を基準に生成されるため、最終的には各 ReduceTaskにちょうど1つずつ割り当てられる。
 
-- デフォールトでReduceTask数は1です。その場合、全てのデータがpartition0に属し、ReduceTaskに入れる。
+```
+partition = hash(key) % numReducers
+```
+
+- デフォールトでReduceTask数は1に設定されている。その場合、全てのデータはpartition0に属て１つReduceTaskに集約される。
 
 **Merge段階**
 

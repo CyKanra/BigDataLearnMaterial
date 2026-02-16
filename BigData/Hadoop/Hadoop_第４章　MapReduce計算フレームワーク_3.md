@@ -32,22 +32,22 @@ partition = hash(key) % numReducers
 
 **Merge段階**
 
-- Copy段階収集されるデータを統合する。例えば、各MapTaskから収集されるpartition0を1つ大きなpartition0になる。
-- どうやってReduceTaskが自分に属するパーティションを見つける？それは各 MapTask は、出力結果を「分区（パーティション）」ごとにローカルファイルに保存しており、各ファイルは `map_output_[partitionID]` のような形式で保持されている。ReduceTaskは、そのファイルによって対応のアドレスからMaptask結果を取得する。
+- Copy段階で収集されたデータは、その後に統合する。各MapTaskから同じパーティション番号（例：partition0）に属するデータを取得し、それらを1つに統合する。
 
 **Sort段階**
 
-　統合されたデータを`<key：単語, value：単語数>`のkey値で並べ替える。
+- 統合と同時に、データは `<key: 単語, value: 出現回数>` の key 値に基づいて並べ替えられる。
 
 **Reduce段階**
 
-　Reduce段階のロジックはReduceメソッドに書いているものです。もしReduceTask数は1で、全てのデータがReduceTaskに収まている。Reduceメソッドに入力するを準備する。
+- Reduce段階の処理ロジックは、`reduce()` メソッド内に実装される。最終的な計算結果は、このメソッドで生成される。
+
 
 ![image-20250612072933416](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250612072933416.png)
 
-　一気に全体的なデータをReduceメソッドに渡すことじゃない。keyごとに1回ずつReducerメソッドが呼ばれ、`Iterable<value>`が渡されて処理する。最後にHDFSファイルに結果を出力する。
+　ReduceTask数は1つ場合で、すべてのデータが一度に`reduce()`に渡されるわけではない。`reduce()` メソッドがkeyごとに1回ずつ呼び出され、対応する値の集合（Iterable）が渡される。
 
-　ReduceTask数は1なので、HDFSにの結果ファイルはpart-r-00000だけである。
+　また、出力ファイルの数はReduceTaskの数と一致するため、HDFS上には `part-r-00000` のみが最終結果ファイルとして生成される。
 
 ![image-20240820074437964](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20240820074437964.png)
 
@@ -55,23 +55,27 @@ partition = hash(key) % numReducers
 
 ### 7.4　Shuffle仕組み
 
-　Copy段階からReduceTaskへ転送する過程はShuffleと呼ばれる。それもMapTaskからReduceTaskにデータを転送する核心の流れです。
+　Copy段階からReduceTaskへ転送する一連の処理は、Shuffleと呼ばれる。これは、MapTaskからReduceTaskへ中間データを受け渡す際の中核となるプロセスです。
 
 ![image-20250621105021712](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250621105021712.png)
 
-　MapTaskの`<key, value>`データは改めて仕切りを行われてあり、新しいパーティションを生成される。MapTaskとReduceTaskの仕切り処理は別々に考える。
+　同じ key 値を持つデータは、同じパーティションに振り分けられる。そして、同じ番号のパーティションは1つの ReduceTask に割り当てられ、最終的に1つの出力ファイルとして生成される。
 
-　同じのkey値のデータを1つReduceTaskに入れたいなら、同じのパーティションに割り振られていい。パーティションとReduceTask数量が同じの場合、同じ番号持つパーティションは1つのReduceTaskに入れ、その動作はMapReduceにとっては黙認の行為です。
+　この特性を利用すれば、特定のデータを同じファイルに纏めたい場合には、同じkey値を付与すればよいということになる。
 
 ![image-20250628095029834](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250628095029834.png)
 
-　上図はパーティションのソースコードで、key値をRedcueTask数に割ると相同的な余りを持つデータが同じのパーティション番号を返す。あと同じのパーティションに入れる。
+　上図は、パーティション計算のソースコードを示している。key 値、ReduceTask 数、そしてパーティション番号の三者は相互に関連している。key値とReduceTask 数を適切に制御することで、データをどのReduceTaskに振り分けるかを決定できる。
 
 ### 7.5　カスタムパーティション
 
-　実況にデフォルトのパーティション処理は全ての需要を満たせないので、そのためカスタム可能のは必要になる。公式は`Partitioner`クラスを継承し、`getPartition()`メソッドを実装するとカスタムになれる。
+　実際の運用では、デフォルトのパーティション処理だけではすべての要件を満たせない場合がある。そのため、カスタムパーティションの実装が必要になることがある。
 
-　下は設備の情報と使用時間のデータで、入力ファイル`partition.txt`格納される。実現結果は同じな接頭語の型番を1つファイルに出力する。
+　Hadoopでは、`Partitioner`クラスを継承し、`getPartition()`メソッドを実装することで、独自のパーティション処理を定義できる。
+
+　以下は、設備の情報と使用時間を記録したデータで、入力ファイル `partition.txt` に格納されている。
+
+　本実装の目的は、同じ接頭語を持つ型番を同一のファイルに出力することです。
 
 ```
 #設備id　型番　ネットIP　使用時間
@@ -85,11 +89,11 @@ partition = hash(key) % numReducers
 01b85a nex_909123 131.200.122.190 1863
 ```
 
-**需要分析：**
+**要件分析：**
 
-- 同じな接頭語データが3種があり、1種が1ファイルに格納するならReduceTask数はせめて3つが要る。
-- カスタムあるので、`Partitioner`クラスの`getPartition()`メソッドを実装するのが必要です。
-- データに対するBeanクラスを実装し、直列化Writableを継承する必要です。
+- 同じ接頭語を持つデータは3種類あるため、それぞれを1つのファイルに出力するには、ReduceTaskは少なくとも3つ必要です。
+- パーティションを独自に制御するため、`Partitioner` クラスを継承し、`getPartition()` メソッドを実装する必要がある。
+- また、入力データを扱うためのBeanクラスを作成し、直列化のために `Writable` インターフェースを実装する必要がある。
 
 **Mapper**
 

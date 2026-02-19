@@ -97,8 +97,8 @@ partition = hash(key) % numReducers
 
 **Mapper**
 
-- 一行データvalueを取得し、Beanクラスに入れる。
-- 二番目項目の前の部分を出力Keyとして渡す。パーティション処理に銘柄によって異なるファイトに入れることがある。
+- 1行分のデータ（value）を取得し、Bean クラスに格納する。
+- 2番目の項目の接頭部分を出力keyとして設定する。key値ごとに異なるファイルへ振り分けられるになる。
 
 ```
 import org.apache.hadoop.io.LongWritable;
@@ -113,17 +113,21 @@ public class PartitionMapper extends Mapper<LongWritable, Text, Text, PartitionB
     protected void map(LongWritable key, Text value, Mapper<LongWritable, Text, Text, PartitionBean>.Context context) throws IOException, InterruptedException {
         //一行文字を取得
         String str = value.toString();
+        
         //文字を区切って項目リストになる
         String[] strs = str.split(" ");
+        
         //型番項目の区切り、入力Keyとして
         String[] modelStr = strs[1].split("_");
         String modelKey = modelStr[0];
+        
         //実体Beanクラスの実装
         PartitionBean partitionBean = new PartitionBean();
         partitionBean.setId(strs[0]);
         partitionBean.setModel(strs[1]);
         partitionBean.setNetIp(strs[2]);
         partitionBean.setUsageTime(strs[3]);
+        
         //出力
         model.set(modelKey);
         context.write(model, partitionBean);
@@ -133,14 +137,14 @@ public class PartitionMapper extends Mapper<LongWritable, Text, Text, PartitionB
 
 **Reducer**
 
-- 何も書かなくていい。
-- Mapperに出力Keyを巡って集合処理がないので、Mapper`<key, partitionBean>`形式のままでファイトに出力する。
+- 特別な処理は要らない。
+- 今回は、Mapper 側で同一keyに対する集計処理を行わないため、`<key, partitionBean>`形式のままでファイルに出力する。
 
 **Bean**
 
-- Mapperの出力値としてBeanクラスがWritableを継承する必要です。
-- `write`と`readFields`二つメソッドを書き直す。
-- 出力ファイルのデータ形式は書き直した`toString()`で決まる。
+- Mapperの出力値とするBeanクラスは`Writable`インターフェースを実装する必要です。
+- `write()`と`readFields()`2つメソッドを書き直し、直列化および逆直列化の処理を実装する。
+- 出力ファイルのデータ形式は上書きの`toString()`メソッドの内容によって決まる。
 
 ```
 import org.apache.hadoop.io.Writable;
@@ -200,8 +204,8 @@ public class PartitionBean implements Writable {
 
 **Partitioner**
 
-- Partitionerを継承して`getPartition()`メソッドを書き直す。
-- 銘柄によって3つのパーティションに区切って戻す。
+- Partitionerを継承し、`getPartition()`メソッドを書き直す。
+- keyの種類によって3つのパーティションに振り分けるよう実装する。
 
 ```
 import org.apache.hadoop.io.Text;
@@ -226,8 +230,8 @@ public class CustomPartitioner extends Partitioner<Text,PartitionBean> {
 
 **Driver**
 
-- Redcuerの部分がないので、Redcuerクラス導入と出力値タイプの設定を省略できる。
-- `job.setNumReduceTasks(3)`ReduceTask数を3つにしてパーティション数と一致にさせる。
+- Reducer処理を実装していないため、独自の Reducer クラスの指定や出力値の型設定は省略できる。
+- `job.setNumReduceTasks(3)`ReduceTask数を3に指定してパーティション数と一致にさせる。
 
 ```
 import org.apache.hadoop.conf.Configuration;
@@ -275,7 +279,7 @@ public class PartitionDriver {
 
 ![image-20250721090825687](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250721090825687.png)
 
-　最後の出力結果は上図のように表示する。同じ銘柄のデータが同じなファイルに入れる。Reducer工程がないので、出力形式はMapper出力の様子です。
+　最後の出力結果は上図のように表示する。同じ銘柄のデータが1つファイルに入れる。Reducer工程がないので、出力形式はMapper出力の様子です。
 
 　もし最初のKey値を除きたい、Reducerがこうのように書ける。
 

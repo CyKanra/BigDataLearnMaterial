@@ -59,7 +59,7 @@ partition = hash(key) % numReducers
 
 ![image-20250621105021712](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250621105021712.png)
 
-　同じ key 値を持つデータは、同じパーティションに振り分けられる。そして、同じ番号のパーティションは1つの ReduceTask に割り当てられ、最終的に1つの出力ファイルとして生成される。
+　同じkey値を持つデータは、同じパーティションに振り分けられる。そして、同じ番号のパーティションは1つの ReduceTask に割り当てられ、最終的に1つの出力ファイルとして生成される。
 
 　この特性を利用すれば、特定のデータを同じファイルに纏めたい場合には、同じkey値を付与すればよいということになる。
 
@@ -279,9 +279,9 @@ public class PartitionDriver {
 
 ![image-20250721090825687](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250721090825687.png)
 
-　最後の出力結果は上図のように表示する。同じ銘柄のデータが1つファイルに入れる。Reducer工程がないので、出力形式はMapper出力の様子です。
+　最終的な出力結果は、上図のとおりです。同じ key 値を持つデータは、同一のファイルにまとめて出力される。今回はReducer処理を行っていないため、出力データの形式はMapperの出力内容と同じになる。
 
-　もし最初のKey値を除きたい、Reducerがこうのように書ける。
+　もし最初Keyが不要で、元のデータ構造をそのまま保持したい場合は、Reducerを下のように実装できる
 
 ```
 import org.apache.hadoop.io.NullWritable;
@@ -300,9 +300,9 @@ public class PartitionReducer extends Reducer<Text, PartitionBean, NullWritable,
 }
 ```
 
-　reduceメソッドの入力変数は同じKeyを持つの反復子です。1つずつ取り出し、nullにして出力する。
+　`reduce()` メソッドの入力引数は、同じkeyを持つ値の集合（Iterable）です。それらを1つずつ取り出し、必要に応じて再構成して出力する。
 
-　勿論、PartitionDriverにコメントアウトされた部分を解ける。
+　なお、`PartitionDriver` でコメントアウトしている部分は有効化する必要がある。
 
 ```
 job.setReducerClass(PartitionReducer.class);
@@ -312,36 +312,40 @@ job.setOutputValueClass(PartitionBean.class);
 
 ![image-20250721103049942](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250721103049942.png)
 
-　結果はこうになる。もし縦棒を外したいならPartitionBeanクラスの`toString()`を書き直す。
+　結果はこうになる。
+
+　出力形式を変更したい場合は、PartitionBeanクラスの`toString()`メソッドを書き直してできる。
 
 ```
- @Override
-    public String toString() {
-        return id + " " +
-                model + " " +
-                netIp + " " +
-                usageTime;
-    }
+@Override
+public String toString() {
+    return id + " " +
+            model + " " +
+            netIp + " " +
+            usageTime;
+}
 ```
 
 ### 7.5　ReduceTask並行度
 
-　Reduceは統合の工程ですけど、並行度の概念もある。MapTaskと切片サイズで決まると違い、ReduceTask数量は手動的に設定できる。
+　Reduceは統合の工程ですが、並行度という概念も存在する。MapTaskの並行度が切片サイズで決まるのと異なり、ReduceTaskの数は手動で設定することができる。
 
 ```
  #3に設定する
  job.setNumReduceTasks(3);
 ```
 
--  ReduceTask=0場合は、 Reduce段階がないと表示する。出力ファイル数とMapTask数が一致になっている。
--  ReduceTask=1はデフォルト値、出力ファイルは1つだけ。
--  ReduceTask数決まったら、パーティション数もReduceTask数に関わって決められる。
+-  ReduceTask=0場合は Reduces過程がないで、パーティション処理もない。出力ファイル数はMapTask数と一致する。
+-  ReduceTask=1はデフォルト値であり、出力ファイルは1つだけ生成される。
+-  ReduceTask数決まったら、パーティション数はReduceTask数に繋がって決定する。
 
-　ただ、先カスタムパーティション案例は、パーティション数が手動的に設定できる。その場合、パーティション数がReduceTask数と異なるなら何が起こる。
+　先ほどカスタムパーティション案例は、パーティションの振り分けロジックを手動で定義している。もし、パーティション数がReduceTask数と一致しない場合、何が起こる。
 
 **ReduceTask=0場合：**
 
-　Reduce処理は完全にスキップされ、Mapの出力がそのまま最終出力になる。でもデータサイズが128Mにまだ至らないので、1つMapTasks数だけで最後に1つファイルに出力する。
+　Reduce処理は完全にスキップされ、Mapの出力がそのまま最終結果として出力される。
+
+　ただし、入力データサイズが128M に満たないので、MapTask は1つだけ生成されるため、最終的な出力ファイルも1つになる。
 
 ![image-20250721173733683](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250721173733683.png)
 
@@ -349,19 +353,21 @@ job.setOutputValueClass(PartitionBean.class);
 
 **ReduceTask=1場合：**
 
-　全てのデータを纏めて1つファイルに出力する。結果はReduceTask=0と同じです。
+　全てのデータを纏めて1つファイルに出力する。
 
 **ReduceTask=2場合：**
 
-　エラーが起こってある。上記の場合を除いてパーティション数より小さくするならプログラムが運行できない。
+　この場合はエラー発生する。（ReduceTask=1のケースを除き）ReduceTask数をパーティション数より小さく設定すると、プログラムは正常に実行できない。
 
 ![image-20250721174226014](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250721174226014.png)
 
 **ReduceTask>3場合：**
 
-　複数の空きファイルが出る。
+　複数の空きファイルが生成されている。
 
 ![image-20250721174750484](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250721174750484.png)
+
+　手動でパーティションの振り分けロジックを定義してパーティション数もう完全にReduceTask数で決定されなくなった。そのため、ReduceTask 数を適切に設定し、パーティション数と一致させるよう注意する必要がある。
 
 
 

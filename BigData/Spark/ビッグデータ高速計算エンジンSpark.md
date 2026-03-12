@@ -34,7 +34,7 @@
 
 　Sparkは、Hadoopのデータ計算MapReduceと対応するだけ。SparkをHadoopに嵌め込んで一緒に使うんです。
 
-**MapReduceの欠点**
+MapReduceの欠点
 
 - **MapReduce表現力が限られている**。例えば、計算ライブラリは色々インタフェースを呼び出せるはずです。MapReduceは，MapとReduce2つ操作だけで、複雑の処理ロジックに追いついてない。
 - **ディスクI/Oの負荷が大きい**。MapとReduceの間にデータがディスクで転送される。ディスクにアクセスするは大量のI/O資源を費やす。
@@ -54,18 +54,37 @@
 
 - Sparkはメモリを積極的に利用する。
 
-　MapReduceでは、1つのJobは Map段階（1つまたは複数のMap Task） と Reduce段階（1つまたは複数のReduce Task） で構成される。処理ロジックが複雑な場合、複数のJobを組み合わせる必要がある。その際、前のJobの結果を HDFSに書き込んでから次のJobに渡す 必要があるため、複雑な処理ではディスクへの書き込み・読み込みが何度も発生する。
+　MapReduceでは、1つのJobは Map段階（1つまたは複数のMap Task） と Reduce段階（1つまたは複数のReduce Task） で構成される。処理ロジックが複雑な場合、複数のJobを組み合わせる必要がある。その際、前のJobの結果をHDFSに書き込んでから次のJobに渡す 必要があるため、複雑な処理ではディスクへの書き込み・読み込みが何度も発生する。
 
-一方、Sparkでは複数の Map / Reduce処理を連続して実行 でき、途中結果をディスクに保存する必要がない。
+一方、Sparkでは複数の Map / Reduce処理を連続して実行でき、途中結果をディスクに保存する必要がない。
 
 例：
 
-　複雑なMR処理：`MR + MR + MR + MR ...`
+　複雑なMR処理：MR + MR + MR + MR ...
 
-　複雑なSpark処理：`MR → MR → MR ...`
+　複雑なSpark処理：MR → MR → MR ...
 
 - マルチプロセス（MR）とマルチスレッド（Spark）の違い
 
 　MapReduceでは Map Task と Reduce Task はプロセス単位で実行される。
 
-　つまり各Taskは JVMプロセス として起動され、毎回リソースを再確保する必要があり、余分な時間がかかる。Sparkでは Taskをスレッドとして実行 し、スレッドプールを再利用することで、Taskの起動・終了に伴うシステムコストを削減している。
+　つまり各Taskは JVMプロセスとして起動され、毎回リソースを再確保する必要があり、余分な時間がかかる。SparkではTaskをスレッドとして実行 し、スレッドプールを再利用することで、Taskの起動・終了に伴うシステムコストを削減している。
+
+### システム構成
+
+　Sparkの実行アーキテクチャは次の要素で構成される。
+
+- Cluster Manager
+- Worker Node
+- Driver
+- Executor
+
+**Cluster Manager**：クラスターのリソースを管理するコンポーネント。Sparkは次の3種類のクラスタ管理方式をサポートしている。Standalone、YARNとMesos。今回はHadoop上にYarnとSparkを組み合わせてアーキテクチャを運行する。
+
+**Worker Node**：作業ノードであり、各ノードのローカルリソースを管理する。
+
+**Driver Program**：アプリケーションのmain()を実行し、SparkContextを生成する。Cluster Manager がリソースを割り当て、SparkContext がTaskをExecutorに送って実行させる。
+
+**Executor**：Worker Node上で動作し、Driverから送られたTaskを実行し、計算結果をDriverに返す。
+
+![image-20260313065726955](D:\OneDrive\picture\Typora\BigData\Spark\image-20260313065726955.png)

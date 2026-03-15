@@ -2,7 +2,7 @@
 
 ## 第１章　Sparkの紹介
 
-### Sparkとは
+### 第１節　Sparkとは
 
 ![image-20260309064401980](D:\OneDrive\picture\Typora\BigData\Spark\image-20260309064401980.png)
 
@@ -28,7 +28,7 @@
 
 またStandaloneモードでも動作するため、簡単にSparkクラスタを構築できる。
 
-### Spark と Hadoop
+#### SparkとHadoop
 
 　Hadoopは分散式フレームワーク、分散ファイルシステムHDFS、データ計算MapReduce、資源のスケジューリングYarnやCommon共用部分を共に組み合わせる。
 
@@ -48,7 +48,7 @@ MapReduceの欠点
 - **インタラクティブクエリ**：処理時間は通常、数十秒～数分
 - **ストリーム処理（リアルタイム処理）**：処理時間は通常、数百ミリ秒～数秒
 
-　これら3種類の処理を同時に扱う場合、従来のHadoopでは複数のソフトウェアを組み合わせて使う必要がある。例：MapReduce / Hive / Impala / Storm など。Sparkの自身は上記の3つの場合を対応できる。
+　これら3種類の処理を同時に扱う場合、従来のHadoopでは複数のソフトウェアを組み合わせて使う必要がある。MapReduce / Hive / Impala / Storm などで、Sparkの自身は上記の3つの場合を対応できる。
 
 **何でSparkはMapReduceより速い**
 
@@ -70,21 +70,22 @@ MapReduceの欠点
 
 　つまり各Taskは JVMプロセスとして起動され、毎回リソースを再確保する必要があり、余分な時間がかかる。SparkではTaskをスレッドとして実行 し、スレッドプールを再利用することで、Taskの起動・終了に伴うシステムコストを削減している。
 
-### システム構成
+### 第２節　システム構成
 
 　Sparkの実行アーキテクチャは次の要素で構成される。
 
-- Cluster Manager
-- Worker Node
-- Driver
-- Executor
+- **Cluster Manager**：クラスターのリソースを管理するコンポーネント。HadoopのNameNode存在みたい。
 
-**Cluster Manager**：クラスターのリソースを管理するコンポーネント。Sparkは次の3種類のクラスタ管理方式をサポートしている。Standalone、YARNとMesos。今回はHadoop上にYarnとSparkを組み合わせてアーキテクチャを運行する。
+　Sparkは3種類のクラスタ管理方式をサポートしている。Standalone、YarnとMesosである。もしHadoop上でSparkを動かす場合、HadoopのYarnにResourceManagerとして考えるもできる。以後のSpark講解は、主にYarnモードを基づいて進める。
 
-**Worker Node**：作業ノードであり、各ノードのローカルリソースを管理する。
+- **Worker Node**：作業ノードであり、NodeManagerに対応する。各ノードのローカルリソースを管理する。
 
-**Driver Program**：アプリケーションのmain()を実行し、SparkContextを生成する。Cluster Manager がリソースを割り当て、SparkContext がTaskをExecutorに送って実行させる。
+- **Driver Program**：アプリケーションのmain()を実行し、SparkContextを生成する。
 
-**Executor**：Worker Node上で動作し、Driverから送られたTaskを実行し、計算結果をDriverに返す。
+　Cluster Managerがリソースを割り当て、SparkContext がTaskをExecutorに送って実行させる。これはアプリケーション向けのコンポーネントで、ノードやリソースを制御するためのものじゃない、役割はYarnのApplicationMasterに近い。
+
+- **Executor**：Worker Node上で動作し、Driverから送られたTaskを実行し、計算結果をDriverに返す。YarnのContainerに対応すし、実際にプログラムを処理するコンポーネントです。
 
 ![image-20260313065726955](D:\OneDrive\picture\Typora\BigData\Spark\image-20260313065726955.png)
+
+### 第３節　Sparkクラスタ実行モード

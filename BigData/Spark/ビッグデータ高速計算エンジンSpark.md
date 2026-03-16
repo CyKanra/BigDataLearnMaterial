@@ -89,3 +89,91 @@ MapReduceの欠点
 ![image-20260313065726955](D:\OneDrive\picture\Typora\BigData\Spark\image-20260313065726955.png)
 
 ### 第３節　Sparkクラスタ実行モード
+
+Sparkは次の3つのクラスタ構成をサポートしている。
+
+- Standalone
+- YARN
+- Mesos
+
+**Standaloneモード**
+
+- 独立したモードで、Spark自身が必要なサービスを持っている。そのため、他のリソース管理システムに依存せず、単独でクラスターに導入できる。
+
+構成要素
+
+- Cluster Manager：Master
+- Worker Node：Worker
+- リソース割り当ては粗い粒度（coarse-grained）の方式のみ対応
+
+**Spark on YARN モード**
+
+- 実際の運用環境で最もよく使われている構成で、YARNはコミュニティのサポートが強く、現在では大規模データクラスターのリソース管理システムの標準の一つになりつつある。
+
+- Spark on YARNには次の2つの実行モードがある。
+
+  - yarn-cluster：本番環境での利用に向いている。
+
+  - yarn-client：対話的な処理やデバッグなど、すぐにアプリの出力を確認したい場合に向いている。
+
+- リソース割り当ては粗い粒度（coarse-grained）方式のみ対応。
+
+構成要素
+
+- Cluster Manager：ResourceManager
+- Worker Node：NodeManager
+
+**Spark on Mesos モード**
+
+- Spark公式が推奨している方式の一つ。Sparkは開発当初からMesosとの連携を考えて設計されている。
+- SparkをMesos上で動かすと、YARN上で動かす場合よりも柔軟で自然なリソース管理ができる。
+- 粗い粒度（coarse-grained）と細かい粒度（fine-grained）の両方のリソース割り当て方式に対応できる。
+
+構成要素
+
+- Cluster Manager：Mesos Master
+- Worker Node：Mesos Slave
+
+**粗い粒度モード（Coarse-grained Mode）**
+
+　アプリケーションを実行する前に、必要なリソースをまとめて確保しておき、実行中は使っていなくてもそのリソースを占有し続ける。そして、アプリケーションが終了した時点でリソースが解放される。
+
+**細かい粒度モード（Fine-grained Mode）**
+
+　粗い粒度モードではリソースが無駄になりやすいため、Spark on Mesosでは細かい粒度のスケジューリング方式も用意されている。この方式は現在のクラウドコンピューティングの考え方に近く、必要な分だけリソースを割り当てる。
+
+### 第４節　公式サイト紹介
+
+![image-20260316214418628](D:\OneDrive\picture\Typora\BigData\Spark\image-20260316214418628.png)
+
+公式サイトURL：[Apache Spark™ - Unified Engine for large-scale data analytics](https://spark.apache.org/)
+
+ソフトウェアのダウンロード：[Apache Archive Distribution Directory](https://archive.apache.org/dist/spark/)
+
+　Downloadに入ってSparkソフトウェアのダウンロードができる。古いバージョンを取得したいは下の赤枠リンクをクリックしてダウロード画面に入る。
+
+![image-20260316214713871](D:\OneDrive\picture\Typora\BigData\Spark\image-20260316214713871.png)
+
+　LibraryはSpark入門について簡単の紹介。
+
+![image-20260316215336243](D:\OneDrive\picture\Typora\BigData\Spark\image-20260316215336243.png)
+
+一番使うのは公式ドキュメント、古いバージョンのドキュメントもある。
+
+![image-20260316221605056](D:\OneDrive\picture\Typora\BigData\Spark\image-20260316221605056.png)
+
+　プログラミングガイド。開発者を助かってSpark特性を依頼してアプリケーションを開発する。ほとんど離れない存在です。
+
+![image-20260316222022473](D:\OneDrive\picture\Typora\BigData\Spark\image-20260316222022473.png)
+
+　公式APIドキュメント。実際にあんまり使ってない。Sparkはオープンソースなので、集成開発環境に見つけられる。
+
+![image-20260316222617908](D:\OneDrive\picture\Typora\BigData\Spark\image-20260316222617908.png)
+
+　どうやってSparkクラスタを構築するのを紹介する。
+
+![image-20260316223047155](D:\OneDrive\picture\Typora\BigData\Spark\image-20260316223047155.png)
+
+　常用のところ。Spark属性の配置、最適化、セキュリティなどここに書かれる。
+
+![image-20260316223339203](D:\OneDrive\picture\Typora\BigData\Spark\image-20260316223339203.png)

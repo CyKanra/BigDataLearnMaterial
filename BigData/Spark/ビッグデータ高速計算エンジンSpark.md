@@ -144,11 +144,15 @@ Sparkは次の3つのクラスタ構成をサポートしている。
 
 ### 第４節　公式サイト紹介
 
-![image-20260316214418628](D:\OneDrive\picture\Typora\BigData\Spark\image-20260316214418628.png)
-
 公式サイトURL：[Apache Spark™ - Unified Engine for large-scale data analytics](https://spark.apache.org/)
 
-ソフトウェアのダウンロード：[Apache Archive Distribution Directory](https://archive.apache.org/dist/spark/)
+ソフトウェアのダウンロードURL：[Apache Archive Distribution Directory](https://archive.apache.org/dist/spark/)
+
+最新のドキュメントURL：[Overview - Spark 4.1.1 Documentation](https://spark.apache.org/docs/latest/)
+
+用語集URL：[Cluster Mode Overview - Spark 4.1.1 Documentation](https://spark.apache.org/docs/latest/cluster-overview.html)
+
+![image-20260316214418628](D:\OneDrive\picture\Typora\BigData\Spark\image-20260316214418628.png)
 
 　Downloadに入ってSparkソフトウェアのダウンロードができる。古いバージョンを取得したいは下の赤枠リンクをクリックしてダウロード画面に入る。
 
@@ -162,7 +166,7 @@ Sparkは次の3つのクラスタ構成をサポートしている。
 
 ![image-20260316221605056](D:\OneDrive\picture\Typora\BigData\Spark\image-20260316221605056.png)
 
-　プログラミングガイド。開発者を助かってSpark特性を依頼してアプリケーションを開発する。ほとんど離れない存在です。
+　プログラミングガイド。開発者を助かってSpark特性を利用してアプリケーションを開発する。ほとんど離れない存在です。
 
 ![image-20260316222022473](D:\OneDrive\picture\Typora\BigData\Spark\image-20260316222022473.png)
 
@@ -177,3 +181,40 @@ Sparkは次の3つのクラスタ構成をサポートしている。
 　常用のところ。Spark属性の配置、最適化、セキュリティなどここに書かれる。
 
 ![image-20260316223339203](D:\OneDrive\picture\Typora\BigData\Spark\image-20260316223339203.png)
+
+### 第５節　用語集の紹介
+
+用語集URL：[Cluster Mode Overview - Spark 4.1.1 Documentation](https://spark.apache.org/docs/latest/cluster-overview.html)
+
+**Application**
+　ユーザーが提出するSparkアプリケーション。単純アップロードのパッケージを指すことじゃない、クラスター内のDriverと複数のExecutorで構成される全体です。もしMapReduceを例えば、Spark ApplicationとMapReduce Jobが似ている。
+
+**Application JAR**
+　Sparkアプリケーションを含むJARファイル。SparkやHadoopのJARを含めずJARパッケージを作るお勧め。クラスタにその相関依頼があって実行時に追加される。なお、パッケージサイズが大きいなら各ノードに配布するのは時間がかかる。
+
+**Driver Program**
+　アプリケーションのmain()を実行し、SparkContextを作成するプログラム。
+
+**Cluster Manager**
+　クラスターのリソースを管理するサービス。
+
+**Deploy Mode**？？？
+　Driverプロセスをどこで実行するかを決めるモード。
+
+- Clusterモード：Driverはクラスター内部で実行される
+- Clientモード：Driverはクラスター外部で実行される
+
+**Worker Node**
+ 　アプリケーションを実行する作業ノード。
+
+**Executor**
+　Taskを実行し、データを保持するプロセス。各アプリケーションは自分専用のExecutorを持ち、それぞれ独立して動作する。
+
+**Task**
+　Executor上で実行される最小の処理単位。
+
+**Job**？？？
+　ユーザープログラムでAction操作を呼び出すたびに、新しいJobが作られる。
+
+**Stage**？？？
+　1つのJobは複数のStageに分割され、各Stageは複数の Taskの集合 で構成される。

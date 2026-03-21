@@ -170,7 +170,7 @@ Sparkは次の3つのクラスタ構成をサポートしている。
 
 ![image-20260316222022473](D:\OneDrive\picture\Typora\BigData\Spark\image-20260316222022473.png)
 
-　公式APIドキュメント。実際にあんまり使ってない。Sparkはオープンソースなので、集成開発環境に見つけられる。
+　公式APIドキュメント。実際にあんまり使ってなく、Sparkはオープンソースなので、集成開発環境に見つけられる。
 
 ![image-20260316222617908](D:\OneDrive\picture\Typora\BigData\Spark\image-20260316222617908.png)
 
@@ -178,7 +178,7 @@ Sparkは次の3つのクラスタ構成をサポートしている。
 
 ![image-20260316223047155](D:\OneDrive\picture\Typora\BigData\Spark\image-20260316223047155.png)
 
-　常用のところ。Spark属性の配置、最適化、セキュリティなどここに書かれる。
+　常用のところで、Spark属性の配置、最適化、セキュリティなどここに書かれる。
 
 ![image-20260316223339203](D:\OneDrive\picture\Typora\BigData\Spark\image-20260316223339203.png)
 
@@ -210,11 +210,11 @@ Sparkは次の3つのクラスタ構成をサポートしている。
 **Executor**
 　Taskを実行し、データを保持するプロセス。各アプリケーションは自分専用のExecutorを持ち、それぞれ独立して動作する。
 
-**Task**
-　Executor上で実行される最小の処理単位。
-
-**Job**？？？
+**Job**
 　ユーザープログラムでAction操作を呼び出すたびに、新しいJobが作られる。
 
-**Stage**？？？
+**Stage**
 　1つのJobは複数のStageに分割され、各Stageは複数の Taskの集合 で構成される。
+
+**Task**
+　Executor上で実行される最小の処理単位。

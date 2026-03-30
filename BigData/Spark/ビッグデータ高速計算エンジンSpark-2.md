@@ -211,8 +211,6 @@ hdfs dfs -mkdir /spark-eventlog
 
 ![image-20260321222316118](D:\OneDrive\picture\Typora\BigData\Spark\image-20260321222316118.png)
 
-![image-20260321222444504](D:\OneDrive\picture\Typora\BigData\Spark\image-20260321222444504.png)
-
 　上述の方法を除いて、`spark-shell`を実行するのはクラスタが正常に起動されるかどうかをテストできる。
 
 ![image-20260321223112547](D:\OneDrive\picture\Typora\BigData\Spark\image-20260321223112547.png)

@@ -8,27 +8,27 @@
 
 ### 8.1　MapReduce中のCombiner
 
-　Combinerとは何、簡単に説明するならReducerと同じのものです。区別は実行する所が違う。
+　Combinerとは何か、簡単に言うと、Reducerとほぼ同じ処理を行うコンポーネントですが、実行される場所が違う。
 
 ![image-20250728154715676](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20250728154715676.png)
 
-- CombinerはMapperとReducer以外にMapReduceコンポーネントの一つです。
-- Combinerの親クラスはReducerで、それは何でReducerとはほとんど同じ。
-- Combiner実行の位置は各節点に各MapTaskにSpill階段とMerge階段の間にいる。Reducerは任意のDateNodeに、それぞれの受け取るデータを集約する。
-- Combinerの役割は、各MapTaskの出力をローカルで集約して、ネットワーク通信量を減らすことです。
-- Combiner使いの前提は最後の結果に影響がない。
+- Combiner役割は、Reducer流れに入る前にMapTaskの出力データを集約し、ノード間のネットワーク通信量を削減することです。
+- Reducer同様にデータを集約するが、実行される場所が異なる。Combiner各MapTask内で、SpillとMergeの間に実行される。Reducerはは各ノード上で、MapTaskから受け取ったデータを集約する。
+- Combinerの親クラスはReducerであり、処理内容もほぼ同じです。
+- Combinerは、MapperとReducerに加えて存在するMapReduceのコンポーネントの一つです。
+- Combinerを使用する前提として、適用しても最終結果に影響が出ない処理である必要がある。
 
-例えば、平均値計算のMR任務あり、Combinerの存在は最後の結果に及ぶ。
+例えば、平均値を計算するMapReduceの処理では、Combinerをそのまま適用すると、最終結果が変わってしまう場合がある。
 
-Combinerありの場合：
+Combiner使う：
 
 ```
-MapTask1出力：10,5,15		如果使用Combiner:(10+5+15)/3=10
-MapTask2出力：2,6          如果使用Combiner:(2+6)/2=4
+MapTask1出力：10,5,15		Combiner:(10+5+15)/3=10
+MapTask2出力：2,6         	Combiner:(2+6)/2=4
 Reduce階段の集約				(10+4)/2=7
 ```
 
-Combinerなしの場合：
+Combiner使ってない：
 
 ```
 (10+5+15+2+6)/5=7.6

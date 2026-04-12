@@ -72,49 +72,39 @@ job.setCombinerClass(PartitionCombiner.class);
 
 ### 8.2　MapReduceの並べ替え
 
-　並べ替えはデータ計算におけてはずっと重要な機能です。今回MapReduceフレームワークに並べ替え処理を紹介する。
+　並べ替えはデータ処理においては非常に重要な機能です。今回MapReduceフレームワークにおける並べ替え処理について説明する。
 
-　MapTaskとReduceTaskはデータのKey値で並べ替えを行うことがあり、それはMapReduceのデフォルト動作です。業務流れに関わらずデフォルトの並べ替え方は文字列順序で処理する。
+　MapTaskとReduceTask両方で、データはKey値に基づいて並べ替えが行われる。それはMapReduceのデフォルト動作であり、特別な設定をしない場合は文字列の順序（辞書順）で処理される。
 
 - MapTask段階
 
-  - 環形キャッシュから書き出すSpill段階にKey値の文字列順序で並べ替える。
+  - 環形キャッシュから書き出すSpill段階にKey値の文字列順序で並び替える。
 
-  - Spill段階が終わり、各Spillファイルを併合する時に並べ替えることもある。
+  - Spill段階が終わり、各Spillファイルを併合する時にも、並べ替えることがある。
 
 
 - ReduceTask段階
 
-  - 最後に全てのデータを出力する時、Key値の文字列順序で並べ替えてある。
+  - 最後にデータが出力される時、Key値の文字列順序に整列されている。
 
 
-　MapReduceは幾つか並べ替え方式を提供する。
+　MapReduceでは、いくつかの並べ替え方法が提供されている。
 
-**局部並べ替え：**
+- **局所並べ替え**：`<key, value>`データに対して並べ替えを行い、各出力ファイルにデータの順序を保証する。
 
-　`<key, value>`データに並べ替えを行う。各出力ファイルにデータ順序を確保する。
+- **全体並べ替え**：最終的な出力ファイルが必ず1つにし、そのファイル内のデータを全体として順序付ける。
 
-**全体並べ替え：**
+- **グループ並べ替え（GroupingComparator）**：`<key, value>` データをグループ単位でまとめて処理する。 同一グループは1つのReduceTask 内でまとめて処理される。
 
-　最終の出力ファイルが必ず一つのみ、ファイルデータは順序がある。
+- **二次並べ替え**：複数フィールドを組み合わせて並べ替えを行う。
 
-**グループ並べ替え（GroupingComparator）：**
-
-　`<key, value>`データをグループ化して並べ替える。それは一つのReduceTaskについてグループ化する。
-
-**二次並べ替え：**
-
-　同時に二つレコード項目について並べ替えを行う。
-
-　局部と全体の並べ替えは複数のファイルを出力するかどうかだけで決められる。前の案例も使える。カスタムタグ並べ替えはもっと詳しく説明する必要です。次に案例を連れて紹介する。
+　局部と全体の並べ替えは複数のファイルを出力するかどうかだけで決められる。カスタムタグ並べ替えはもっと詳しい説明が必要となるため、次に例を連れて紹介する。
 
 #### 8.2.1　WritableComparableカスタムタグ並べ替え
 
-　ここから案例を挙げてカスタムタグ並べ替えを紹介する。
+　前述のとおり、Beanクラスの`toString()`メソッドを書き直すで最後の出力形式を制御できる。同様に、並べ替えはWritableComparableクラスを継承して`compareTo()`を書き直すことで実現できる。
 
-　前にBeanクラスにの`toString()`メソッドを書き直すと最後の出力形式を決められる。並べ替えも、WritableComparableクラスを継承して`compareTo()`を書き直すによって実現する。
-
-　データはまだ設備使用時間を使って、実現したい結果は設備の銘柄の番号と使用時間で二重並べ替えを行う。
+　ここでは、設備使用時間データをもとに設備の銘柄の番号と使用時間の2つの項目で二次並べ替えを行う。
 
 ```
 0a8cd1 kar_992134 149.187.152.169 4054
@@ -130,10 +120,10 @@ job.setCombinerClass(PartitionCombiner.class);
 
 **Bean**
 
-- `WritableComparable`クラスを継承し、もう`Writable`じゃない。
-- `compareTo()`メソッドを上書きし、2つ項目を持って二重比較も実現できる。
-- `compareTo()`メソッド戻り値は1、0、-1があり、意味は入力値が比べてより大きい、等しい、より小さい。
-- `compareTo()`と`toString()`はRedcuer段階にファイルにデータを出力する過程に役立つ。
+- `WritableComparable`を実装する。
+- `compareTo()`メソッドを上書きすることで、複数の項目を使った比較を実現できる。
+- `compareTo()`の戻り値は、比較結果を表す（正の値：大きい、0：等しい、負の値：小さい）。
+- `compareTo()`と`toString()`メソッドは、Redcuerのファイルにデータを出力する段階では有効だ。
 
 ```
 public class SortBean implements WritableComparable<SortBean> {
@@ -207,8 +197,9 @@ public class SortBean implements WritableComparable<SortBean> {
 
 **Mapper**
 
-- 出力メソッド`context.write()`のKeyはsortBean対象に変わって、valueの部分はnullになる。
-- そうする理由はMRフレームワークにshuffle段階にKeyで並べ替えは黙認の行為で、その行為の実行メソッドは`compareTo()`です。そのため、`compareTo()`メソッドを有効にして欲しいならSortBeanをKeyとして渡す必要です。
+- 出力メソッド`context.write()`のKeyはsortBean対象に変更し、valueには`NullWritable.get()`に設定する。
+- Keyの順序で並べ替えするのはフレームワークの黙認動作であり、その際に呼び出されるのは`compareTo()`メソッドです。
+- 今の`compareTo()`メソッド引数は同じ `SortBean` 型となるため、`sortBean`をKeyとして渡す必要がある。
 
 ```
 public class SortMapper extends Mapper<LongWritable, Text, SortBean, NullWritable> {
@@ -233,7 +224,7 @@ public class SortMapper extends Mapper<LongWritable, Text, SortBean, NullWritabl
 
 **Reducer**
 
-　特別の変わりがない
+　特別の変わりがない。
 
 ```
 public class SortReducer extends Reducer<Text, SortBean, NullWritable, SortBean> {
@@ -248,7 +239,7 @@ public class SortReducer extends Reducer<Text, SortBean, NullWritable, SortBean>
 
 **Driver**
 
-　Mapperの出力タイプは改修が必要です。
+　Mapperの出力タイプは変更が必要です。
 
 ```
 public class SortDriver {

@@ -107,15 +107,15 @@ job.setCombinerClass(PartitionCombiner.class);
 　ここでは、設備使用時間データをもとに設備の銘柄の番号と使用時間の2つの項目で二次並べ替えを行う。
 
 ```
-0a8cd1 kar_992134 149.187.152.169 4054
-0ce73e kar_334455 181.133.189.160 8938
-034347 kar_334455 157.86.7.229 821
-0cdf27 kar_992134 233.205.58.168 9709
-0b66c9 kar_553322 236.9.100.245 9921
-0c35e3 kar_999999 49.179.180.211 5672
-0b6b5d kar_786544 114.179.97.23 7648
-01b85a kar_553322 131.200.122.190 1863
-0bdn27 kar_786544 233.185.58.152 371900
+0a8cd1,kar_992134,149.187.152.169,4054
+0ce73e,kar_334455,181.133.189.160,8938
+034347,kar_334455,157.86.7.229,821
+0cdf27,kar_992134,233.205.58.168,9709
+0b66c9,kar_553322,236.9.100.245,9921
+0c35e3,kar_999999,49.179.180.211,5672
+0b6b5d,kar_786544,114.179.97.23,7648
+01b85a,kar_553322,131.200.122.190,1863
+0bdn27,kar_786544,233.185.58.152,371900
 ```
 
 **Bean**
@@ -136,7 +136,7 @@ public class SortBean implements WritableComparable<SortBean> {
     public String getModel() {
         return model;
     }
-    
+
     public Long getUsageTime() {
         return usageTime;
     }
@@ -159,9 +159,9 @@ public class SortBean implements WritableComparable<SortBean> {
 
     @Override
     public String toString() {
-        return id + " " +
-                model + " " +
-                netIp + " " +
+        return id + "   " +
+                model + "   " +
+                netIp + "   " +
                 usageTime;
     }
 
@@ -183,14 +183,26 @@ public class SortBean implements WritableComparable<SortBean> {
 
     @Override
     public int compareTo(SortBean sortBean) {
-        String[] modelStr =sortBean.getModel().split("_");
+        int result;
+        String[] modelStr = sortBean.getModel().split("_");
         Long modelKey = Long.parseLong(modelStr[1]);
         String[] modelStr2 = model.split("_");
         Long modelKey2 =  Long.parseLong(modelStr2[1]);
-        if (modelKey2 != modelKey)
-            return Long.compare(modelKey2, modelKey);
+        if (modelKey2 > modelKey) {
+            result = 1;
+        } else if (modelKey2 < modelKey) {
+            result = -1;
+        } else {
+            if (usageTime > sortBean.getUsageTime()) {
+                result = 1;
+            } else if (usageTime < sortBean.getUsageTime()) {
+                result = -1;
+            } else {
+                result = 0;
+            }
+        }
+        return result;
 
-        return Long.compare(usageTime, sortBean.getUsageTime());
     }
 }
 ```
@@ -204,12 +216,12 @@ public class SortBean implements WritableComparable<SortBean> {
 ```
 public class SortMapper extends Mapper<LongWritable, Text, SortBean, NullWritable> {
     @Override
-    protected void map(LongWritable key, Text value, Mapper<LongWritable, Text, SortBean, NullWritable>.Context context)
+    protected void map(LongWritable key, Text value, Context context)
             throws IOException, InterruptedException {
         //一行文字を取得
         String str = value.toString();
         //文字を区切って単語数組になる
-        String[] strs = str.split(" ");
+        String[] strs = str.split(",");
         SortBean sortBean = new SortBean();
         sortBean.setId(strs[0]);
         sortBean.setModel(strs[1]);
@@ -219,7 +231,6 @@ public class SortMapper extends Mapper<LongWritable, Text, SortBean, NullWritabl
         context.write(sortBean, NullWritable.get());
     }
 }
-
 ```
 
 **Reducer**
@@ -227,11 +238,11 @@ public class SortMapper extends Mapper<LongWritable, Text, SortBean, NullWritabl
 　特別の変わりがない。
 
 ```
-public class SortReducer extends Reducer<Text, SortBean, NullWritable, SortBean> {
+public class SortReducer extends Reducer<SortBean, NullWritable, NullWritable, SortBean> {
     @Override
-    protected void reduce(Text key, Iterable<SortBean> values, Reducer<Text, SortBean, NullWritable, SortBean>.Context context) throws IOException, InterruptedException {
-        for (SortBean value : values) {
-            context.write(NullWritable.get(), value);
+    protected void reduce(SortBean key, Iterable<NullWritable> values, Context context) throws IOException, InterruptedException {
+        for (NullWritable value : values) {
+            context.write(value, key);
         }
     }
 }
@@ -247,7 +258,7 @@ public class SortDriver {
     public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException {
         //配置ファイルを設定とJobを作成
         Configuration configuration = new Configuration();
-        Job job = Job.getInstance(configuration, "SortDriver");
+        Job job = Job.getInstance(configuration);
         //Mapper、Reducer、Driverクラスを添加
         job.setJarByClass(SortDriver.class);
         job.setMapperClass(SortMapper.class);
@@ -270,7 +281,11 @@ public class SortDriver {
 }
 ```
 
+　複数フィールドの並べ替えです。
 
+![image-20260413223135258](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20260413223135258.png)
+
+![image-20260413221050579](D:\OneDrive\picture\Typora\BigData\Hadoop\image-20260413221050579.png)
 
 #### 8.2.2　GroupingComparator
 

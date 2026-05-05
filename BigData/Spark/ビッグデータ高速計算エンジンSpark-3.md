@@ -84,11 +84,59 @@ spark-shell --master local[*]
 
 　疑似分散モードは、1台のマシン上でクラスター環境を擬似的に再現するモード。関連するプロセスもすべて同じマシン上で動作する。
 
-※ クラスター用のリソース管理サービスを起動する必要はない。
-
 **起動形式**
 
 - `local-cluster[N, cores, memory]`
   - **N**：仮想的に用意するWorker（Slave）ノードの数
   - **cores**：各Workerが持つCPUコア数
   - **memory**：各Workerに割り当てるメモリ容量
+
+```
+spark-shell --master local-cluster[4,2,1024]
+```
+
+　クラスター用のリソース管理サービスを起動する必要はない。そうして、`local-cluster[4,2,1024]`変数の値を大きくすぎると資源が足りなくなるので注意する。
+
+![image-20260501105820104](D:\OneDrive\picture\Typora\BigData\Spark\image-20260501105820104.png)
+
+![image-20260501122216498](D:\OneDrive\picture\Typora\BigData\Spark\image-20260501122216498.png)
+
+　jps確認すると、SparkSubmitが1つ、CoarseGrainedExecutorBackendが4つ起動していることが分かる。SparkSubmitはこの場合、Client、Driver、資源管理の役割を兼ねる中心的なプロセスとして動作する。一方、4つのCoarseGrainedExecutorBackendは実際に処理を並列実行するプロセス。
+
+　でも、このモードはあんまりお勧めしない。使いところは少ないし、不具合も多い。
+
+### 2.3　クラスタモード--Standalone
+
+　分散環境で実行してこそ、分散処理のメリットが活きるローカルモードと違い、事前にSparkのMasterとWorkerを起動しておく必要がある。このモードはYARNを使わない。Hadoopのサービスは使わないなら基本不要です。　
+
+![image-20260502100747469](D:\OneDrive\picture\Typora\BigData\Spark\image-20260502100747469.png)
+
+　Sparkログ設定を有効にする。そうならはSparkをHDFSによって運行しなきゃいけない。 
+
+```
+#単独ノードのMaster、Workerの起動
+sbin/start-master.sh / sbin/stop-master.sh
+sbin/start-slave.sh / sbin/stop-slave.sh
+
+#全体のWorkerの起動
+sbin/start-slaves.sh / sbin/stop-slaves.sh
+
+#Master、Worker一括の起動
+sbin/start-all.sh / sbin/stop-all.sh
+```
+
+![image-20260503104045490](D:\OneDrive\picture\Typora\BigData\Spark\image-20260503104045490.png)
+
+　`start-slave.sh`コマンドは後にmasterのアドレス`spark://hostname:port`変数を付ける必要です。幾つか変数設定が提供される。
+
+![image-20260503104126506](D:\OneDrive\picture\Typora\BigData\Spark\image-20260503104126506.png)
+
+![image-20260503105117194](D:\OneDrive\picture\Typora\BigData\Spark\image-20260503105117194.png)
+
+　`start-slaves.sh`全てのWorkerノードを起動し、変数は不要。
+
+![image-20260503112314671](D:\OneDrive\picture\Typora\BigData\Spark\image-20260503112314671.png)
+
+　 `start-all.sh`と`stop-all.sh`はMasterとWorkerを一緒に起動、停止でき、変数は不要。
+
+![image-20260503122940755](D:\OneDrive\picture\Typora\BigData\Spark\image-20260503122940755.png)

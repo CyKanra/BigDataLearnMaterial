@@ -74,19 +74,23 @@ MapReduceの欠点
 
 　Sparkの実行アーキテクチャは次の要素で構成される。
 
-- **Cluster Manager**：クラスターのリソースを管理するコンポーネント。HadoopのNameNode存在みたい。
+- **Driver Program**：アプリケーションのmain()を実行し、SparkContextを生成する。
+
+　Cluster Managerがアプリケーション全体の司令塔です。リソースを割り当て、SparkContext がTaskをExecutorに送って実行させる。これはアプリケーション向けのコンポーネントで、ノードやリソースを制御するためのものじゃない、役割はYarnのApplicationMasterに近い。
+
+- **Master Node（Cluster Manager）**：クラスターのリソースを管理するコンポーネント。HadoopのNameNode存在みたい。
 
 　Sparkは3種類のクラスタ管理方式をサポートしている。Standalone、YarnとMesosである。もしHadoop上でSparkを動かす場合、HadoopのYarnにResourceManagerとして考えるもできる。以後のSpark講解は、主にYarnモードを基づいて進める。
 
 - **Worker Node**：作業ノードであり、NodeManagerに対応する。各ノードのローカルリソースを管理する。
 
-- **Driver Program**：アプリケーションのmain()を実行し、SparkContextを生成する。
-
-　Cluster Managerがリソースを割り当て、SparkContext がTaskをExecutorに送って実行させる。これはアプリケーション向けのコンポーネントで、ノードやリソースを制御するためのものじゃない、役割はYarnのApplicationMasterに近い。
+- **SparkContext**：Driverの中心となるオブジェクトです。
 
 - **Executor**：Worker Node上で動作し、Driverから送られたTaskを実行し、計算結果をDriverに返す。YarnのContainerに対応すし、実際にプログラムを処理するコンポーネントです。
 
 ![image-20260313065726955](D:\OneDrive\picture\Typora\BigData\Spark\image-20260313065726955.png)
+
+
 
 ### 第３節　Sparkクラスタ実行モード
 

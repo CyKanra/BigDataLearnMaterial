@@ -125,3 +125,26 @@ RDDの依存関係は、大きく2種類に分けられる。
 　Checkpointを設定すると、RDDのデータをHDFSなどの永続ストレージに保存し、それ以前の依存関係を切り離すことができる。その後は元の親RDDまで遡る必要がなく、Checkpointに保存されたデータを起点として処理を再開できる。
 
 　つまり、以前は「親RDD → 親RDD → 親RDD → 現在のRDD」、今は「Checkpoint → 現在のRDD」となり、依存関係が長くなりすぎた場合の再計算コストを抑えられる、という仕組みです。
+
+## 第３節 Sparkのプログラミングモデル
+
+　Sparkでは、DB・ファイルシステム・HDFSなどのさまざまなデータソースからデータを読み込み、RDDとして処理する。基本的な流れは「データソース → SparkContext → RDD → Transformation / Action → 結果出力」となる。
+
+![image-20260923112626416](D:\OneDrive\picture\Typora\BigData\Spark\image-20260923112626416.png)
+
+- 先ずSparkContextは、Sparkプログラミングの入り口にあたる。例えば、Javaの方はDBをアクセスしくてJDBCに関するクラスを新規する必要があり、SparkContextはSparkを利用して最初の連接クラスです。
+- RDDは処理対象となるデータを表して複数のパーティションに分かれます。
+- RDDを変換する処理を Transformation と呼ぶ。さまざまなメソッドを呼び出し、データを変換・処理する
+- Transformationは遅延評価（Lazy Evaluation）で、呼び出しただけでは実際の計算は行われない。Actionが呼び出されたタイミングで、必要なTransformationがまとめて実行される。
+- 最後に計算結果を画面に表示したり、外部ストレージへ保存したりする。
+- 大体「RDDはデータ」「Transformationは計算方法の定義」「Actionは実際の計算を開始させるもの」 の3つを中心に理解してオッケーです。
+
+#### DriverとWorkerの役割
+
+Sparkアプリケーションを実行するには、Driverプログラムを作成し、クラスターに投入する。
+
+- Driver側では、RDDを作成し、`map` や `filter` などの処理内容を定義する。
+
+- Worker側では、実際にRDDの各パーティションに対する定義した計算処理を実行する。
+
+![image-20260923112835699](D:\OneDrive\picture\Typora\BigData\Spark\image-20260923112835699.png)

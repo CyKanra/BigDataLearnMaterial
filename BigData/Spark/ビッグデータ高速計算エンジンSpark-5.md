@@ -4,3 +4,4 @@
 
 ## 第４節　RDDの作成
 
+#### SparkContextの作成

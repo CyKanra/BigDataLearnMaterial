@@ -113,6 +113,8 @@ spark-shell --master local-cluster[4,2,1024]
 
 #### 2.3.1　Standaloneモードの起動
 
+**spark-defaults.conf**
+
 ![image-20260502100747469](D:\OneDrive\picture\Typora\BigData\Spark\image-20260502100747469.png)
 
 　ここSparkログ設定を有効にすると、HDFSを使うが必要です。
@@ -276,9 +278,9 @@ spark.eventLog.compress　true
 export SPARK_HISTORY_OPTS="-Dspark.history.ui.port=18080 -Dspark.history.retainedApplications=50 -Dspark.history.fs.logDirectory=hdfs://centos1:9000/spark-eventlog"
 ```
 
-![image-20260807065102530](D:\OneDrive\picture\Typora\BigData\Spark\image-20260807065102530.png)
+![image-20261010162151516](D:\OneDrive\picture\Typora\BigData\Spark\image-20261010162151516.png)
 
-![image-20260807065137705](D:\OneDrive\picture\Typora\BigData\Spark\image-20260807065137705.png)
+![image-20261010150012995](D:\OneDrive\picture\Typora\BigData\Spark\image-20261010150012995.png)
 
 　設定が完了しては各ノードに割り当てる。
 
@@ -352,7 +354,7 @@ stop-yarn.sh
 
 ![image-20260811151206144](D:\OneDrive\picture\Typora\BigData\Spark\image-20260811151206144.png)
 
-　Spark方は、spark-env.shにHadoopの設定ファイルのアドレスを追加する。
+　Spark方は、**spark-env.sh**にHadoopの設定ファイルのアドレスを追加する。
 
 ```
 # spark-env.sh
@@ -366,10 +368,15 @@ export HADOOP_CONF_DIR=/opt/bigdata/servers/hadoop-2.9.2/etc/hadoop
 　SparkのプロジェクトはいるjarパッケージをHDFSにアップロードしておく。そのステップをしなくても実行中にアップロードし、時間がかかるので先に準備しておいたほうがいい。
 
 ```
+# hadoop historyserverと集約
+spark.yarn.historyServer.address linux121:18080
+
 spark.yarn.jars hdfs:///spark-yarn/jars/*.jar
 ```
 
-![image-20260813102250537](D:\OneDrive\picture\Typora\BigData\Spark\image-20260813102250537.png)
+![image-20261010162340823](D:\OneDrive\picture\Typora\BigData\Spark\image-20261010162340823.png)
+
+![image-20261010162603586](D:\OneDrive\picture\Typora\BigData\Spark\image-20261010162603586.png)
 
 ```
 # SparkのjarパッケージをHDFSにアップロード
@@ -385,9 +392,7 @@ hdfs dfs -put * /spark-yarn/jars/
 YARNモードも2つの実行方式がある。
 
 - yarn-client：Driverはクライアント側で動作して、実行結果をその場で確認しやすく、対話的な操作やデバッグに向いている。
-- yarn-cluster：DriverはYARNのApplicationMaster側で動作し、クライアントから切り離して実行できる。本番環境での実行に向いている
-
-。
+- yarn-cluster：DriverはYARNのApplicationMaster側で動作し、クライアントから切り離して実行できる。本番環境での実行に向いている。
 
 **yarn-clientモード**
 
@@ -428,7 +433,7 @@ spark.yarn.historyServer.address centos1:18080
 spark.history.ui.port            18080
 ```
 
-![image-20260817062206858](D:\OneDrive\picture\Typora\BigData\Spark\image-20260817062206858.png)
+![image-20261010162451094](D:\OneDrive\picture\Typora\BigData\Spark\image-20261010162451094.png)
 
 　設定ファイルを他のノードに配布することを忘れないように、後SparkのHistoryServerサービスを起動する。
 
